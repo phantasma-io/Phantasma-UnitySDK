@@ -1,0 +1,34 @@
+{
+  "name": "com.phantasmaphoenix.linkclient",
+  "version": "0.1.0",
+  "displayName": "Phantasma Phoenix Link Client",
+  "description": "Unity SDK package to connect Phantasma-enabled apps with Phantasma Link (Poltergeist or other wallet)",
+  "unity": "2021.3",
+  "author": {
+    "name": "Phantasma Phoenix Team",
+    "email": "info@phantasma.info",
+    "url": "https://phantasma.info"
+  },
+  "keywords": [
+    "android",
+    "Blockchain",
+    "phantasma",
+    "Phantasma",
+    "Phantasma Blockchain",
+    "Phantasma Link",
+    "Phantasma Link Client",
+    "Phantasma Link Client for Unity",
+    "Phantasma Link Client for Unity3D",
+    "PhantasmaChain",
+    "Phantasmaio",
+    "SmartNFTs",
+    "SmartNFT",
+    "Smart NFTs",
+    "Smart NFT",
+    "Phantasma SDK"
+  ],
+  "license": "ISC",
+  "type": "library",
+  "dependencies": {
+  }
+}
