@@ -489,38 +489,36 @@ public class PhantasmaLinkClient: MonoBehaviour
     {
         if (!Enabled)
         {
-            callback?.Invoke(true, "not logged in", "", "");
+            callback?.Invoke(false, "Not logged in", "", "");
             return;
         }
         if (data == null)
         {
-            callback?.Invoke(true, "invalid data, sorry :(", "", "");
+            callback?.Invoke(false, "Invalid data", "", "");
             return;
         }
         if (data.Length >= 1024)
         {
-            callback?.Invoke(true, "data too big, sorry :(", "", "");
+            callback?.Invoke(false, "Data too big", "", "");
             return;
         }
 
         var dataConverted = Base16.Encode(Encoding.UTF8.GetBytes(data));
 
         SendLinkRequest($"signData/{dataConverted}/{signature}/{platform}", (result) => {
-
             var success = result.GetBool("success");
             if (success)
             {
                 var random = result.GetString("random");
                 var signedData = result.GetString("signature");
-                callback?.Invoke(false, signedData, random, dataConverted);
+                callback?.Invoke(true, signedData, random, dataConverted);
             }
             else
             {
                 var msg = result.GetString("message");
-                callback?.Invoke(true, "transaction rejected: " + msg, "", "");
+                callback?.Invoke(false, "Failed to sign data: " + msg, "", "");
             }
         });
-
     }
 
     public enum PlatformKind

@@ -10,9 +10,17 @@ using UnityEngine;
 
 public class WalletInteractions : MonoBehaviour
 {
-
+    public static string PhantasmaRpc = "https://testnet.phantasma.io/rpc";
+    public static string RecipientAddress;
+    public static string Symbol;
+    public static int? Decimals;
+    public static decimal Amount;
+    public static string Chain;
+    public static string Payload;
+    public static string TokenId;
+    public static string DataToSign;
     #region Events
-    public event Action<string,bool> OnLoginEvent;
+    public event Action<string, bool> OnLoginEvent;
     #endregion
     
     /// <summary>
@@ -22,7 +30,7 @@ public class WalletInteractions : MonoBehaviour
     {
         if (!PhantasmaLinkClient.Instance.IsLogged) return;
         
-        PhantasmaAPI api = new PhantasmaAPI("https://testnet.phantasma.io/rpc");
+        PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
         StartCoroutine(api.GetAccount(PhantasmaLinkClient.Instance.Address, account =>
         {
             Debug.Log(account.balances.Length);
@@ -34,14 +42,33 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void SendRawTransaction()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "SOUL";
-        var amount = UnitConversion.ToBigInteger(1, 8);
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.TransferTokens", userAddress, toAddress, symbol, amount).
             SpendGas(userAddress).
@@ -66,9 +93,12 @@ public class WalletInteractions : MonoBehaviour
     /// <param name="callback"></param>
     public void GetTransaction(string hash, Action<Transaction> callback)
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
         
-        PhantasmaAPI api = new PhantasmaAPI("https://testnet.phantasma.io/rpc");
+        PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
         StartCoroutine(api.GetTransaction(hash, callback));
     }
 
@@ -77,9 +107,17 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void GetNFT()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
-        PhantasmaAPI api = new PhantasmaAPI("https://testnet.phantasma.io/rpc");
-        var symbol = "CROWN";
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+
+        PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
+        var symbol = Symbol;
         var ID = "";
         StartCoroutine(api.GetNFT(symbol, ID, (nft) =>
         {
@@ -92,9 +130,17 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void GetNFTs()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
-        PhantasmaAPI api = new PhantasmaAPI("https://testnet.phantasma.io/rpc");
-        var symbol = "CROWN";
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+
+        PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
+        var symbol = Symbol;
         var IDs = PhantasmaLinkClient.Instance.GetNFTs(symbol);
         StartCoroutine(api.GetNFTs(symbol, IDs, (nfts) =>
         {
@@ -108,8 +154,17 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void InvokeRawScript()
     {
-        PhantasmaAPI api = new PhantasmaAPI("https://testnet.phantasma.io/rpc");
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+
+        PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
+        var toAddress = Address.FromText(RecipientAddress);
         ScriptBuilder sb = new ScriptBuilder();
         var script = sb.
             CallContract("stake", "getStake", toAddress).
@@ -126,16 +181,27 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void MintNFT()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "NSYM";
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
         var rom = new byte[0];
         var ram = new byte[0];
         var series = new BigInteger("0");
-        var payload = Base16.Decode("OurDappExample");
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.MintToken", userAddress, toAddress, symbol, rom, ram, series).
             SpendGas(userAddress).
@@ -158,15 +224,21 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void UpdateNFT()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "NSYM";
+        var symbol = Symbol;
         var ram = new byte[0];
-        var tokenID = new BigInteger("0");
-        var payload = Base16.Decode("OurDappExample");
+        var tokenID = new BigInteger(TokenId);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.WriteToken", userAddress, symbol, tokenID, ram).
             SpendGas(userAddress).
@@ -189,16 +261,22 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void BurnNFT()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "CROWN";
-        var id = new BigInteger("1000000000000");
-        var payload = Base16.Decode("OurDappExample");
+        var symbol = Symbol;
+        var tokenID = new BigInteger(TokenId);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
-            CallInterop("Runtime.BurnToken", userAddress, symbol, id).
+            CallInterop("Runtime.BurnToken", userAddress, symbol, tokenID).
             SpendGas(userAddress).
             EndScript();
         
@@ -219,14 +297,25 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void SendNFT()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "CROWN";
-        var tokenID = new BigInteger("190000000");
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var tokenID = new BigInteger(TokenId);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.TransferToken", userAddress, toAddress, symbol, tokenID).
             SpendGas(userAddress).
@@ -249,15 +338,30 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void InfuseToken()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var symbol = "CROWN";
-        var tokenID = new BigInteger("190000000");
-        var infuseSymbol = "SOUL"; // IT could be an NFT
-        var infuseAmount = UnitConversion.ToBigInteger(1, 8);
-        var payload = Base16.Decode("OurDappExample");
+        var symbol = Symbol;
+        var tokenID = new BigInteger(TokenId);
+        var infuseSymbol = Symbol; // IT could be an NFT
+        var infuseAmount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.InfuseToken", userAddress, symbol, tokenID, infuseSymbol, infuseAmount).
             SpendGas(userAddress).
@@ -280,14 +384,33 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void MintTokens()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "NSYM";
-        var amount = new BigInteger("190000000");
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.MintTokens", userAddress, toAddress, symbol, amount).
             SpendGas(userAddress).
@@ -310,14 +433,28 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void BurnTokens()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "NSYM";
-        var amount = new BigInteger("1000000000000");
-        var payload = Base16.Decode("OurDappExample");
+        var symbol = Symbol;
+        var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.BurnTokens", userAddress, symbol, amount).
             SpendGas(userAddress).
@@ -340,14 +477,33 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void TransferTokens()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "SOUL";
-        var amount = UnitConversion.ToBigInteger(1, 8);
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.TransferTokens", userAddress, toAddress, symbol, amount).
             SpendGas(userAddress).
@@ -370,13 +526,24 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void TransferBalance()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "SOUL";
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.TransferBalance", userAddress, toAddress, symbol).
             SpendGas(userAddress).
@@ -395,14 +562,24 @@ public class WalletInteractions : MonoBehaviour
     }
 
     /// <summary>
-    /// Sign Data with the user private key.
+    /// Sign data with the user's private key.
     /// </summary>
     public void SignData()
     {
-        string dataToSign = "This is a test";
-        PhantasmaLinkClient.Instance.SignData(dataToSign, (success, random, signed, data) =>
+        if (string.IsNullOrWhiteSpace(DataToSign))
         {
-            
+            throw new ArgumentException("Data to sign is required", nameof(DataToSign));
+        }
+        PhantasmaLinkClient.Instance.SignData(DataToSign, (success, signed, random, data) =>
+        {
+            if (success)
+            {
+                Debug.Log($"Successfully signed data: signature: {signed}, random: {random}");
+            }
+            else
+            {
+                Debug.Log("Failed to sign data");
+            }
         } );
     }
 
@@ -411,14 +588,33 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     public void MultiSig()
     {
-        if (!PhantasmaLinkClient.Instance.IsLogged) return;
+        if (!PhantasmaLinkClient.Instance.IsLogged)
+        {
+            throw new InvalidOperationException("User must be logged in before performing this action");
+        }
+        if (string.IsNullOrWhiteSpace(RecipientAddress))
+        {
+            throw new ArgumentException("Recipient address is required", nameof(RecipientAddress));
+        }
+        if (string.IsNullOrWhiteSpace(Symbol))
+        {
+            throw new ArgumentException("Symbol is required", nameof(Symbol));
+        }
+        if (Decimals == null)
+        {
+            throw new ArgumentException("Decimals is required", nameof(Decimals));
+        }
+        if (Amount <= 0)
+        {
+            throw new ArgumentException("Amount is required", nameof(Amount));
+        }
 
         ScriptBuilder sb = new ScriptBuilder();
         var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText("P2KKEjZK7AbcKZjuZMsWKKgEjNzeGtr2zBiV7qYJHxNXvUa");
-        var symbol = "SOUL";
-        var amount = UnitConversion.ToBigInteger(1, 8);
-        var payload = Base16.Decode("OurDappExample");
+        var toAddress = Address.FromText(RecipientAddress);
+        var symbol = Symbol;
+        var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
+        var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
             CallInterop("Runtime.TransferTokens", userAddress, toAddress, symbol, amount).
             SpendGas(userAddress).
@@ -450,22 +646,22 @@ public class WalletInteractions : MonoBehaviour
                     if (result)
                     {
                         // Call event to Handle Login
-                        OnLoginEvent?.Invoke("Logged In.", false);
-                        Debug.LogWarning("Phantasma Link authorization logged.");
+                        OnLoginEvent?.Invoke("Logged In", false);
+                        Debug.LogWarning("Phantasma Link authorization logged");
                     }
                     else
                     {
-                        OnLoginEvent?.Invoke("Phantasma Link authorization failed.", true);
-                        Debug.LogWarning("Phantasma Link authorization failed.");
+                        OnLoginEvent?.Invoke("Phantasma Link authorization failed", true);
+                        Debug.LogWarning("Phantasma Link authorization failed");
                     }
                 });
             else
-                OnLoginEvent?.Invoke("Logged In.", false);
+                OnLoginEvent?.Invoke("Logged In", false);
         }
         else
         {
-            Debug.LogWarning("Phantasma Link connection is not ready.");
-            OnLoginEvent?.Invoke("Phantasma Link connection is not ready.", true);
+            Debug.LogWarning("Phantasma Link connection is not ready");
+            OnLoginEvent?.Invoke("Phantasma Link connection is not ready", true);
             PhantasmaLinkClient.Instance.Enable();
         }
     }
