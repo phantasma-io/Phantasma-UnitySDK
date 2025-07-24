@@ -1,8 +1,8 @@
 {
-  "name": "com.phantasmaphoenix.linkclient",
+  "name": "com.phantasmaphoenix.core",
   "version": "0.1.0",
-  "displayName": "Phantasma Phoenix Link Client",
-  "description": "Unity SDK package to connect Phantasma-enabled apps with Phantasma Link (Poltergeist or other wallet)",
+  "displayName": "Phantasma Phoenix Core",
+  "description": "Core Unity SDK for Phantasma Phoenix. Includes signing, serialization, and transaction tools without any UI dependencies",
   "unity": "2021.3",
   "author": {
     "name": "Phantasma Phoenix Team",
@@ -30,6 +30,5 @@
   "license": "ISC",
   "type": "library",
   "dependencies": {
-    "com.phantasmaphoenix.core": "0.1.0"
   }
 }

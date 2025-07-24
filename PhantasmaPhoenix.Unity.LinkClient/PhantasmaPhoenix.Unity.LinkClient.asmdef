@@ -1,3 +1,6 @@
 {
-  "name": "PhantasmaPhoenix.Unity.LinkClient"
+  "name": "PhantasmaPhoenix.Unity.LinkClient",
+  "references": [
+    "PhantasmaPhoenix.Unity.Core"
+  ]
 }

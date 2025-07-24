@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.phantasmaphoenix.core": "file:../../PhantasmaPhoenix.Unity.Core",
     "com.phantasmaphoenix.linkclient": "file:../../PhantasmaPhoenix.Unity.LinkClient",
     "com.unity.collab-proxy": "2.5.2",
     "com.unity.feature.development": "1.0.1",

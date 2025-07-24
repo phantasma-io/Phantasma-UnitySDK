@@ -1,10 +1,18 @@
 {
   "dependencies": {
+    "com.phantasmaphoenix.core": {
+      "version": "file:../../PhantasmaPhoenix.Unity.Core",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.phantasmaphoenix.linkclient": {
       "version": "file:../../PhantasmaPhoenix.Unity.LinkClient",
       "depth": 0,
       "source": "local",
-      "dependencies": {}
+      "dependencies": {
+        "com.phantasmaphoenix.core": "0.1.0"
+      }
     },
     "com.unity.collab-proxy": {
       "version": "2.5.2",
