@@ -5,6 +5,7 @@ using System.Text;
 using Phantasma.Core.Cryptography;
 using Phantasma.Core.Domain;
 using Phantasma.Core.Numerics;
+using PhantasmaPhoenix.Unity.Core.Logging;
 using UnityEngine;
 using Event = Phantasma.Core.Domain.Event;
 

@@ -7,6 +7,7 @@ using UnityEngine.Networking;
 using LunarLabs.Parser;
 using LunarLabs.Parser.JSON;
 using System.Text;
+using PhantasmaPhoenix.Unity.Core.Logging;
 
 namespace Phantasma.SDK
 {

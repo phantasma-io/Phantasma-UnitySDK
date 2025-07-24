@@ -1,12 +1,11 @@
-﻿using LunarLabs.Parser;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 #if UNITY_5_3_OR_NEWER
 using UnityEngine;
 #endif
 
-namespace Phantasma.SDK
+namespace PhantasmaPhoenix.Unity.Core.Logging
 {
     public static class Log
     {
@@ -27,7 +26,8 @@ namespace Phantasma.SDK
             Error
         }
 
-        private static string FilePath;
+        public static bool IsInitialized => LogStreamWriter != null;
+        public static string FilePath;
         private static FileStream LogFileStream;
         private static StreamWriter LogStreamWriter;
         private static Level MaxLevel = Level.Networking;
@@ -40,8 +40,25 @@ namespace Phantasma.SDK
 
         private static object Locker = new object();
 
+        private static bool OpenLogFileStream(string filePath, FileMode fileMode)
+        {
+            try
+            {
+                LogFileStream = File.Open(filePath, fileMode, FileAccess.Write, FileShare.Read);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static void Init(string fileName, Level maxLevel, bool forceWorkingFolderUsage = false, bool overwriteOldContent = false, bool addTid = false)
         {
+            if (IsInitialized)
+                return;
+
             MaxLevel = maxLevel;
 
             OverwriteOldContent = overwriteOldContent;
@@ -58,8 +75,6 @@ namespace Phantasma.SDK
             }
 #endif
 
-            FilePath = Path.Combine(FilePath, fileName);
-
             // Opening log stream.
             FileMode _fileMode = FileMode.Append;
 
@@ -68,7 +83,25 @@ namespace Phantasma.SDK
                 _fileMode = FileMode.Create;
                 OverwriteOldContent = false;
             }
-            LogFileStream = File.Open(FilePath, _fileMode, FileAccess.Write, FileShare.Read);
+
+            string filePath = "";
+            for(var i = 0; i < 1000; i++)
+            {
+                if (i == 0)
+                {
+                    filePath = Path.Combine(FilePath, fileName);
+                }
+                else
+                {
+                    var extension = Path.GetExtension(fileName);
+                    filePath = Path.Combine(FilePath, Path.ChangeExtension(Path.GetFileNameWithoutExtension(fileName) + "-" + i, extension));
+                }
+                
+                if (OpenLogFileStream(filePath, _fileMode))
+                    break;
+            }
+            FilePath = filePath;
+
             LogStreamWriter = new StreamWriter(LogFileStream);
         }
 
@@ -100,14 +133,14 @@ namespace Phantasma.SDK
             Write(message, level, UnityDebugLogMode.Warning);
         }
 
-        public static void WriteError(string message, Level level = Level.Logic)
+        public static void WriteFatalError(string message, Level level = Level.Logic)
         {
             Write(message, level, UnityDebugLogMode.Error);
         }
 
         public static void Write(string message, Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
         {
-            if (LogStreamWriter != null && MaxLevel != Level.Disabled && level <= MaxLevel)
+            if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
             {
                 DateTime _now = DateTime.Now;
 
@@ -190,13 +223,33 @@ namespace Phantasma.SDK
 #endif
         }
 
-        public static void WriteJson(DataNode node, string message = "", Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
+        public static void WriteRaw(string message, Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
         {
-            Write(message + DataFormats.SaveToString(DataFormat.JSON, node), level, unityDebugLogMode);
-        }
-        public static void WriteXML(DataNode node, string message = "", Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
-        {
-            Write(message + DataFormats.SaveToString(DataFormat.XML, node), level, unityDebugLogMode);
+            if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
+            {
+                lock (Locker)
+                {
+                    if (ConsoleOutput)
+                        Console.Write(message);
+                    LogStreamWriter.Write(message);
+                    LogStreamWriter.Flush();
+                }
+            }
+
+#if UNITY_5_3_OR_NEWER
+            switch (unityDebugLogMode)
+            {
+                case UnityDebugLogMode.Normal:
+                    Debug.Log(message);
+                    break;
+                case UnityDebugLogMode.Warning:
+                    Debug.LogWarning(message);
+                    break;
+                case UnityDebugLogMode.Error:
+                    Debug.LogError(message);
+                    break;
+            }
+#endif
         }
     }
 }
