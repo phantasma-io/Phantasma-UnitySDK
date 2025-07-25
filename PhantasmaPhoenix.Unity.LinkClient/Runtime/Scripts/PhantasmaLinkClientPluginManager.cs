@@ -55,15 +55,17 @@ public class PhantasmaLinkClientPluginManager : MonoBehaviour
         #if UNITY_ANDROID
         _PluginInstance.Call("OpenWallet");
         #endif
-    } 
+    }
 
 
     public async Task SendTransaction(string tx)
     {
-        #if UNITY_ANDROID
+#if UNITY_ANDROID
         var result = _PluginInstance.Call<string>("SendMyCommand", tx);
         await Task.Delay(0);
-        #endif
+#else
+        await Task.Delay(0);
+#endif
     }
 
     public void Example()

@@ -157,16 +157,6 @@ public class PhantasmaLinkClient : MonoBehaviour
             var success = GetValueOrDefault<bool>(result, "success");
             if (success)
             {
-                //var avatarData = result.GetString("avatar");
-                //avatarData = avatarData.Split(new char[] { ',' }, 2)[1];
-
-                //var avatarBytes = System.Convert.FromBase64String(avatarData);
-
-                //this.Avatar = new Texture2D(32, 32, TextureFormat.ARGB32, false, true);
-                //ImageConversion.LoadImage(this.Avatar, avatarBytes);
-
-                //Debug.Log($"Avatar: {Avatar.width}x{Avatar.height}");
-
                 this.Name = GetValueOrDefault<string>(result, "name");
                 this.Address = GetValueOrDefault<string>(result, "address");
                 this.IsLogged = true;
