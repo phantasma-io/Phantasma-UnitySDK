@@ -2,10 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Org.BouncyCastle.Math;
-using Phantasma.Business.VM.Utils;
-using Phantasma.Core.Cryptography;
-using Phantasma.Core.Numerics;
 using Phantasma.SDK;
+using PhantasmaPhoenix.Core;
+using PhantasmaPhoenix.Cryptography;
+using PhantasmaPhoenix.RPC.Models;
+using PhantasmaPhoenix.VM;
 using UnityEngine;
 
 public class WalletInteractions : MonoBehaviour
@@ -33,7 +34,7 @@ public class WalletInteractions : MonoBehaviour
         PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
         StartCoroutine(api.GetAccount(PhantasmaLinkClient.Instance.Address, account =>
         {
-            Debug.Log(account.balances.Length);
+            Debug.Log(account.Balances.Length);
         }));
     }
 
@@ -64,8 +65,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -91,7 +92,7 @@ public class WalletInteractions : MonoBehaviour
     /// </summary>
     /// <param name="hash"></param>
     /// <param name="callback"></param>
-    public void GetTransaction(string hash, Action<Transaction> callback)
+    public void GetTransaction(string hash, Action<TransactionResult> callback)
     {
         if (!PhantasmaLinkClient.Instance.IsLogged)
         {
@@ -164,7 +165,7 @@ public class WalletInteractions : MonoBehaviour
         }
 
         PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
-        var toAddress = Address.FromText(RecipientAddress);
+        var toAddress = Address.Parse(RecipientAddress);
         ScriptBuilder sb = new ScriptBuilder();
         var script = sb.
             CallContract("stake", "getStake", toAddress).
@@ -172,7 +173,7 @@ public class WalletInteractions : MonoBehaviour
         var scriptEncoded = Base16.Encode(script);
         StartCoroutine(api.InvokeRawScript("main", scriptEncoded, scriptResult =>
         {
-            Debug.Log(scriptResult.results.Length);
+            Debug.Log(scriptResult.Results.Length);
         }));
     }
 
@@ -195,8 +196,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var rom = new byte[0];
         var ram = new byte[0];
@@ -234,7 +235,7 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
         var symbol = Symbol;
         var ram = new byte[0];
         var tokenID = new BigInteger(TokenId);
@@ -271,7 +272,7 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
         var symbol = Symbol;
         var tokenID = new BigInteger(TokenId);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -311,8 +312,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var tokenID = new BigInteger(TokenId);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -356,7 +357,7 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
         var symbol = Symbol;
         var tokenID = new BigInteger(TokenId);
         var infuseSymbol = Symbol; // IT could be an NFT
@@ -406,8 +407,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -451,7 +452,7 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
         var symbol = Symbol;
         var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -499,8 +500,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
@@ -540,8 +541,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);
         var script = sb.AllowGas(userAddress, Address.Null, PhantasmaLinkClient.Instance.GasPrice, PhantasmaLinkClient.Instance.GasLimit ).
@@ -610,8 +611,8 @@ public class WalletInteractions : MonoBehaviour
         }
 
         ScriptBuilder sb = new ScriptBuilder();
-        var userAddress = Address.FromText(PhantasmaLinkClient.Instance.Address);
-        var toAddress = Address.FromText(RecipientAddress);
+        var userAddress = Address.Parse(PhantasmaLinkClient.Instance.Address);
+        var toAddress = Address.Parse(RecipientAddress);
         var symbol = Symbol;
         var amount = UnitConversion.ToBigInteger(Amount, Decimals.Value);
         var payload = string.IsNullOrWhiteSpace(Payload) ? null : System.Text.Encoding.UTF8.GetBytes(Payload);

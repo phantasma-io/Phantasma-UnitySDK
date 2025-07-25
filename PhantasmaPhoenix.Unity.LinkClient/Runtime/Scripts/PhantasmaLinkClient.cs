@@ -5,10 +5,10 @@ using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Text;
-using Phantasma.Core.Cryptography;
-using Phantasma.Core.Numerics;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using PhantasmaPhoenix.Cryptography;
+using PhantasmaPhoenix.Core;
 
 public class PhantasmaLinkClient : MonoBehaviour
 {
