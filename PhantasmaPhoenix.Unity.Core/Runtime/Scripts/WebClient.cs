@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using PhantasmaPhoenix.Unity.Core.Logging;
 
-namespace Phantasma.SDK
+namespace PhantasmaPhoenix.Unity.Core
 {
     public static class WebClient
     {

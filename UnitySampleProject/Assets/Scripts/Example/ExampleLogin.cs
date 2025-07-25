@@ -1,9 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
-using Phantasma.SDK;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ExampleLogin : MonoBehaviour
 {

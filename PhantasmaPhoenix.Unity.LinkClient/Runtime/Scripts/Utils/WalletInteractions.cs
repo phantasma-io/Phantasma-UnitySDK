@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Org.BouncyCastle.Math;
-using Phantasma.SDK;
 using PhantasmaPhoenix.Core;
 using PhantasmaPhoenix.Cryptography;
 using PhantasmaPhoenix.RPC.Models;
+using PhantasmaPhoenix.Unity.Core;
 using PhantasmaPhoenix.VM;
 using UnityEngine;
 

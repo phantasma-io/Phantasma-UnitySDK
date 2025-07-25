@@ -8,7 +8,7 @@ using PhantasmaPhoenix.RPC.Types;
 using PhantasmaPhoenix.Unity.Core.Logging;
 using UnityEngine;
 
-namespace Phantasma.SDK
+namespace PhantasmaPhoenix.Unity.Core
 {
     public class PhantasmaAPI
     {
