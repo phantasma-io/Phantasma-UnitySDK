@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using NativeWebSocket;
 using UnityEngine;
-using UnityEngine.UI;
-using LunarLabs.Parser;
-using LunarLabs.Parser.JSON;
 using UnityEngine.Events;
-using Phantasma.SDK;
 using System.Text;
 using Phantasma.Core.Cryptography;
 using Phantasma.Core.Numerics;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
-public class PhantasmaLinkClient: MonoBehaviour
+public class PhantasmaLinkClient : MonoBehaviour
 {
     public struct Balance
     {
@@ -53,7 +50,7 @@ public class PhantasmaLinkClient: MonoBehaviour
     [Tooltip("This is used to sign transactions, for Phantasma blockchain use, (PlatformKind.Phantasma) and SignatureKind.ED25519 \n for Ethereum blockchain use, (PlatformKind.Ethereum) and SignatureKind.ECDSA")]
     public PlatformKind Platform = PlatformKind.Phantasma;
     public SignatureKind Signature = SignatureKind.Ed25519;
-    
+
     [Space]
     [Header("Gas Setup")]
     public int GasPrice = 100000;
@@ -82,7 +79,7 @@ public class PhantasmaLinkClient: MonoBehaviour
 
     public IEnumerable<string> Assets => _balanceMap.Keys;
 
-    private Dictionary<int, Action<DataNode>> _requestCallbacks = new Dictionary<int, Action<DataNode>>();
+    private Dictionary<int, Action<JObject>> _requestCallbacks = new Dictionary<int, Action<JObject>>();
 
     private Dictionary<string, Balance> _balanceMap = new Dictionary<string, Balance>();
     private Dictionary<string, Balance> _ownershipMap = new Dictionary<string, Balance>();
@@ -91,6 +88,13 @@ public class PhantasmaLinkClient: MonoBehaviour
     public static UnityEvent<bool, string> OnLogin;
     public static UnityEvent<string> OnInfo = new UnityEvent<string>();
     #endregion
+
+    static T GetValueOrDefault<T>(JObject obj, string field, T fallback = default)
+    {
+        return obj.TryGetValue(field, out var token) && token.Type != JTokenType.Null
+            ? token.Value<T>()
+            : fallback;
+    }
 
     /// <summary>
     /// On Awake make it Singleton
@@ -107,8 +111,8 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         SetMessage("Loading...");
     }
-    
-    
+
+
     /// <summary>
     /// Run on Start
     /// </summary>
@@ -150,7 +154,7 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         SendLinkRequest($"getAccount/{Platform}", (result) =>
         {
-            var success = result.GetBool("success");
+            var success = GetValueOrDefault<bool>(result, "success");
             if (success)
             {
                 //var avatarData = result.GetString("avatar");
@@ -163,36 +167,30 @@ public class PhantasmaLinkClient: MonoBehaviour
 
                 //Debug.Log($"Avatar: {Avatar.width}x{Avatar.height}");
 
-                this.Name = result.GetString("name");
-                this.Address = result.GetString("address");
+                this.Name = GetValueOrDefault<string>(result, "name");
+                this.Address = GetValueOrDefault<string>(result, "address");
                 this.IsLogged = true;
 
                 _balanceMap.Clear();
                 _ownershipMap.Clear();
 
-                var balances = result.GetNode("balances");
+                var balances = result["balances"] as JArray;
                 if (balances != null)
                 {
-                    foreach (var child in balances.Children)
+                    foreach (var child in balances.Children<JObject>())
                     {
-                        var symbol = child.GetString("symbol");
-                        var value = child.GetString("value");
+                        var symbol = GetValueOrDefault<string>(child, "symbol");
+                        var value = GetValueOrDefault<string>(child, "value");
                         var amount = BigInteger.Parse(value);
-                        var decimals = child.GetInt32("decimals");
-                        var ids_node = child.GetNode("ids");
-                        string[] ids_array = new string[0];
-                        if (ids_node != null)
-                        {
-                            ids_array = new string[ids_node.ChildCount];
-                            for (int i = 0; i < ids_node.ChildCount; i++)
-                            {
-                                ids_array[i] = ids_node.GetString(i);
-                            }
-                        }
-                        
-                        _balanceMap[symbol] = new Balance(symbol, amount, decimals, ids_array);
-                        if ( ids_array.Length > 0)  
-                            _ownershipMap[symbol] = new Balance(symbol, amount, decimals, ids_array);
+                        var decimals = GetValueOrDefault<Int32>(child, "decimals");
+
+                        string[] ids = child["ids"] is JArray arr
+                            ? arr.Select(x => x?.Value<string>() ?? "").ToArray()
+                            : Array.Empty<string>();
+
+                        _balanceMap[symbol] = new Balance(symbol, amount, decimals, ids);
+                        if (ids.Length > 0)
+                            _ownershipMap[symbol] = new Balance(symbol, amount, decimals, ids);
                     }
                 }
 
@@ -215,7 +213,7 @@ public class PhantasmaLinkClient: MonoBehaviour
     /// </summary>
     /// <param name="request"></param>
     /// <param name="callback"></param>
-    private async void SendLinkRequest(string request, Action<DataNode> callback)
+    private async void SendLinkRequest(string request, Action<JObject> callback)
     {
         if (!request.Contains("authorize"))
         {
@@ -224,7 +222,7 @@ public class PhantasmaLinkClient: MonoBehaviour
                 request = request + '/' + this.DappID + '/' + this.Token;
             }
         }
-            
+
 
         Debug.Log("Sending Phantasma Link Request: " + request);
 
@@ -234,9 +232,9 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         _requestCallbacks[requestID] = callback;
         Debug.Log("Request=>" + request);
-        #if UNITY_ANDROID
+#if UNITY_ANDROID
         await PhantasmaLinkClientPluginManager.Instance.SendTransaction(request);
-        #endif
+#endif
         await websocket.SendText(request);
     }
 
@@ -310,9 +308,9 @@ public class PhantasmaLinkClient: MonoBehaviour
             var json = System.Text.Encoding.UTF8.GetString(bytes);
             Debug.Log("OnMessage! " + json);
 
-            var node = JSONReader.ReadFromString(json);
+            var node = JObject.Parse(json);
 
-            var reqID = node.GetInt32("id");
+            var reqID = GetValueOrDefault<Int32>(node, "id");
             if (_requestCallbacks.ContainsKey(reqID))
             {
                 var callback = _requestCallbacks[reqID];
@@ -347,7 +345,7 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         return 0;
     }
-    
+
     /// <summary>
     /// Returns the NFTs IDs for a specific symbol
     /// </summary>
@@ -380,10 +378,10 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         SendLinkRequest($"authorize/{DappID}/{Version}", (result) =>
         {
-            var success = result.GetBool("success");
+            var success = GetValueOrDefault<bool>(result, "success");
             if (success)
             {
-                var connectedNexus = result.GetString("nexus");
+                var connectedNexus = GetValueOrDefault<string>(result, "nexus");
 
                 if (connectedNexus != this.Nexus)
                 {
@@ -392,10 +390,10 @@ public class PhantasmaLinkClient: MonoBehaviour
                 }
                 else
                 {
-                    this.Wallet = result.GetString("wallet");
-                    this.Token = result.GetString("token");
+                    this.Wallet = GetValueOrDefault<string>(result, "wallet");
+                    this.Token = GetValueOrDefault<string>(result, "token");
                     this.IsLogged = true;
-                    
+
                     FetchAccount(callback);
                 }
             }
@@ -463,16 +461,16 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         SendLinkRequest($"signTx/{requestStr}", (result) =>
         {
-            var success = result.GetBool("success");
+            var success = GetValueOrDefault<bool>(result, "success");
             if (success)
             {
-                var hashStr = result.GetString("hash");
+                var hashStr = GetValueOrDefault<string>(result, "hash");
                 var hash = Hash.Parse(hashStr);
                 callback?.Invoke(hash, null);
             }
             else
             {
-                var msg = result.GetString("message");
+                var msg = GetValueOrDefault<string>(result, "message");
                 callback?.Invoke(Hash.Null, "transaction rejected: " + msg);
             }
         });
@@ -505,17 +503,18 @@ public class PhantasmaLinkClient: MonoBehaviour
 
         var dataConverted = Base16.Encode(Encoding.UTF8.GetBytes(data));
 
-        SendLinkRequest($"signData/{dataConverted}/{signature}/{platform}", (result) => {
-            var success = result.GetBool("success");
+        SendLinkRequest($"signData/{dataConverted}/{signature}/{platform}", (result) =>
+        {
+            var success = GetValueOrDefault<bool>(result, "success");
             if (success)
             {
-                var random = result.GetString("random");
-                var signedData = result.GetString("signature");
+                var random = GetValueOrDefault<string>(result, "random");
+                var signedData = GetValueOrDefault<string>(result, "signature");
                 callback?.Invoke(true, signedData, random, dataConverted);
             }
             else
             {
-                var msg = result.GetString("message");
+                var msg = GetValueOrDefault<string>(result, "message");
                 callback?.Invoke(false, "Failed to sign data: " + msg, "", "");
             }
         });
