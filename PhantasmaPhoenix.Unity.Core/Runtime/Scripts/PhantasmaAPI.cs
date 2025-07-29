@@ -637,10 +637,10 @@ namespace PhantasmaPhoenix.Unity.Core
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        public static bool IsValidPrivateKey(string address)
+        public static bool IsValidPrivateKey(string key)
         {
-            return (address.StartsWith("L", false, CultureInfo.InvariantCulture) ||
-                    address.StartsWith("K", false, CultureInfo.InvariantCulture)) && address.Length == 52;
+            return (key.StartsWith("L", false, CultureInfo.InvariantCulture) ||
+                    key.StartsWith("K", false, CultureInfo.InvariantCulture)) && key.Length == 52;
         }
 
         /// <summary>
