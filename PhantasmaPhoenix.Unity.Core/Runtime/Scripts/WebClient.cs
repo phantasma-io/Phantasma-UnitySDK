@@ -10,9 +10,8 @@ namespace PhantasmaPhoenix.Unity.Core
 {
     public static class WebClient
     {
-        public static int NoTimeout = 0;
-        public static int DefaultTimeout = 30;
-        public static int DefaultRetries = 0;
+        public const int DefaultTimeout = 0;
+        public const int DefaultRetries = 0;
         private static long requestNumber = 0;
         private static object requestNumberLock = new object();
         private static long GetNextRequestNumber()
