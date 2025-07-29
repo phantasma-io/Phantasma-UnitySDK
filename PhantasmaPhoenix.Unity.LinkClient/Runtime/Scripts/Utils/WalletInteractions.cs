@@ -118,7 +118,7 @@ public class WalletInteractions : MonoBehaviour
         PhantasmaAPI api = new PhantasmaAPI(PhantasmaRpc);
         var symbol = Symbol;
         var ID = "";
-        StartCoroutine(api.GetNFT(symbol, ID, (nft) =>
+        StartCoroutine(api.GetNFT(symbol, ID, true, (nft) =>
         {
             Debug.Log(nft);
         }));

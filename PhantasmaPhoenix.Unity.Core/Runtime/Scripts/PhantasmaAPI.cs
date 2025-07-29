@@ -397,7 +397,7 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator GetNFT(string symbol, string IDtext, Action<TokenDataResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator GetNFT(string symbol, string IDtext, bool loadProperties, Action<TokenDataResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
             while (tokensLoadedSimultaneously > 5)
             {
@@ -406,8 +406,14 @@ namespace PhantasmaPhoenix.Unity.Core
             tokensLoadedSimultaneously++;
 
             yield return WebClient.RPCRequest<TokenDataResult>(Host, "getNFT", WebClient.NoTimeout, WebClient.DefaultRetries, errorHandlingCallback, (result) => {
+                // TODO remove later, check if still required
+                if (string.IsNullOrEmpty(result.Id))
+                {
+                    result.Id = IDtext;
+                }
+
                 callback(result);
-            }, symbol, IDtext);
+            }, symbol, IDtext, loadProperties);
 
             tokensLoadedSimultaneously--;
         }
@@ -464,9 +470,9 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator GetAddressTransactions(string addressText, uint page, uint pageSize, Action<AccountResult, uint, uint> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator GetAddressTransactions(string addressText, uint page, uint pageSize, Action<AccountTransactionsResult, uint, uint> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
-            yield return WebClient.RPCRequest<PaginatedResult<AccountResult>>(Host, "getAddressTransactions", WebClient.NoTimeout, WebClient.DefaultRetries, errorHandlingCallback, (result) => {
+            yield return WebClient.RPCRequest<PaginatedResult<AccountTransactionsResult>>(Host, "getAddressTransactions", WebClient.NoTimeout, WebClient.DefaultRetries, errorHandlingCallback, (result) => {
                 callback(result.Result, result.Page, result.TotalPages);
             }, addressText, page, pageSize);
         }
@@ -493,10 +499,11 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator SendRawTransaction(string txData, Action<string> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator SendRawTransaction(string txData, Hash txHash, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
-            yield return WebClient.RPCRequest<string>(Host, "sendRawTransaction", WebClient.NoTimeout, WebClient.DefaultRetries, errorHandlingCallback, (result) => {
-                callback(result);
+            yield return WebClient.RPCRequest<string>(Host, "sendRawTransaction", WebClient.DefaultTimeout, 0, errorHandlingCallback, (result) =>
+            {
+                callback(result, txData, txHash);
             }, txData);
         }
 
@@ -554,11 +561,12 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator WriteArchive(string hashText, int blockIndex, string blockContent, Action<Boolean> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator WriteArchive(string hashText, int blockIndex, byte[] blockContent, Action<Boolean> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
-            yield return WebClient.RPCRequest<string>(Host, "writeArchive", WebClient.NoTimeout, WebClient.DefaultRetries, errorHandlingCallback, (result) => {
+            yield return WebClient.RPCRequest<string>(Host, "writeArchive", WebClient.DefaultTimeout, 0, errorHandlingCallback, (result) =>
+            {
                 callback(Boolean.Parse(result));
-            }, hashText, blockIndex, blockContent);
+            }, hashText, blockIndex, Convert.ToBase64String(blockContent));
         }
 
         /// <summary>
@@ -588,7 +596,7 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator SignAndSendTransaction(PhantasmaKeys keys, string nexus, byte[] script, string chain, Action<string> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator SignAndSendTransaction(IKeyPair keys, string nexus, byte[] script, string chain, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
             return SignAndSendTransactionWithPayload(keys, nexus, script, chain, new byte[0], callback, errorHandlingCallback);
         }
@@ -604,7 +612,7 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator SignAndSendTransactionWithPayload(PhantasmaKeys keys, string nexus, byte[] script, string chain, string payload, Action<string> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
+        public IEnumerator SignAndSendTransactionWithPayload(IKeyPair keys, string nexus, byte[] script, string chain, string payload, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null)
         {
             return SignAndSendTransactionWithPayload(keys, nexus, script, chain, Encoding.UTF8.GetBytes(payload), callback, errorHandlingCallback);
         }
@@ -621,14 +629,15 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="errorHandlingCallback"></param>
         /// <param name="customSignFunction"></param>
         /// <returns></returns>
-        public IEnumerator SignAndSendTransactionWithPayload(IKeyPair keys, string nexus, byte[] script, string chain, byte[] payload, Action<string> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
+        public IEnumerator SignAndSendTransactionWithPayload(IKeyPair keys, string nexus, byte[] script, string chain, byte[] payload, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
         {
-            Log.Write("Sending transaction...");
+            Log.Write("Sending transaction... script size: " + script.Length);
 
             var tx = new PhantasmaPhoenix.Protocol.Transaction(nexus, chain, script, DateTime.UtcNow + TimeSpan.FromMinutes(20), payload);
-            tx.Sign(keys, customSignFunction);
 
-            yield return SendRawTransaction(Base16.Encode(tx.ToByteArray(true)), callback, errorHandlingCallback);
+            Hash txHash = tx.Sign(keys, customSignFunction);
+
+            yield return SendRawTransaction(Base16.Encode(tx.ToByteArray(true)), txHash, callback, errorHandlingCallback);
         }
         #endregion
 
