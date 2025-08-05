@@ -510,6 +510,21 @@ public class PhantasmaLinkClient : MonoBehaviour
         });
     }
 
+    /// <summary>
+    /// Reset WebSocket Connection
+    /// </summary>
+    public async void resetWebSocket()
+    {
+        if (websocket != null)
+        {
+            this.Ready = false;
+            this.IsLogged = false;
+            this.Enabled = false;
+            await websocket.Close();
+            websocket = null;
+        }
+    }
+
     public enum PlatformKind
     {
         None = 0x0,
