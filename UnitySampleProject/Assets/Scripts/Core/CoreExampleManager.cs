@@ -6,7 +6,9 @@ public class CoreExampleManager : MonoBehaviour
 {
     [Header("Config")]
     public string RpcUrl = "https://testnet.phantasma.info/rpc";
+    public string Nexus = "testnet"; // Use "mainnet" for mainnet
     public string TokenSymbol = "SOUL";
+    public float TokenAmount = 0.01f;
     public string TestAddress = "P2K..."; // Set in Inspector
 
     [Header("State")]
