@@ -105,10 +105,13 @@ namespace PhantasmaPhoenix.Unity.Core
 
             DateTime startTime = DateTime.Now;
 
-            UnityWebRequest request;
+            UnityWebRequest.Result? result = null;
+            string response = null;
+            string formattedError = null;
+
             for (; ; )
             {
-                request = new UnityWebRequest(url, "POST");
+                using var request = new UnityWebRequest(url, "POST");
                 request.uploadHandler = new UploadHandlerRaw(bodyRaw);
                 request.downloadHandler = new DownloadHandlerBuffer();
                 request.SetRequestHeader("Content-Type", "application/json");
@@ -116,8 +119,15 @@ namespace PhantasmaPhoenix.Unity.Core
                     request.timeout = timeout;
 
                 yield return request.SendWebRequest();
+                result = request.result;
+                response = request.downloadHandler.text;
+                if (result == UnityWebRequest.Result.ConnectionError || result == UnityWebRequest.Result.ProtocolError || result == UnityWebRequest.Result.DataProcessingError)
+                {
+                    var parsedRpcError = TryParseJsonRpcError(response);
+                    formattedError = FormatError(request, url, parsedRpcError);
+                }
 
-                if (request.result == UnityWebRequest.Result.Success || retriesOnNetworkError == 0)
+                if (result == UnityWebRequest.Result.Success || retriesOnNetworkError == 0)
                 {
                     // success
                     break;
@@ -130,22 +140,18 @@ namespace PhantasmaPhoenix.Unity.Core
 
             TimeSpan responseTime = DateTime.Now - startTime;
 
-            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError || request.result == UnityWebRequest.Result.DataProcessingError)
+            if (result == UnityWebRequest.Result.ConnectionError || result == UnityWebRequest.Result.ProtocolError || result == UnityWebRequest.Result.DataProcessingError)
             {
-                var parsedRpcError = TryParseJsonRpcError(request.downloadHandler.text);
-                var error = FormatError(request, url, parsedRpcError);
-                Log.Write($"RPC error [{requestNumber}]\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{error}", Log.Level.Networking);
-                errorHandlingCallback?.Invoke(EPHANTASMA_SDK_ERROR_TYPE.WEB_REQUEST_ERROR, error);
+                Log.Write($"RPC error [{requestNumber}]\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{formattedError}", Log.Level.Networking);
+                errorHandlingCallback?.Invoke(EPHANTASMA_SDK_ERROR_TYPE.WEB_REQUEST_ERROR, formattedError);
             }
             else
             {
-                Log.Write($"RPC response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{request.downloadHandler.text}", Log.Level.Networking);
+                Log.Write($"RPC response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{response}", Log.Level.Networking);
 
                 try
                 {
-                    var stringResponse = request.downloadHandler.text;
-
-                    var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(stringResponse);
+                    var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(response);
                     if (rpcResponse != null && rpcResponse.result != null && rpcResponse.error == null)
                     {
                         callback?.Invoke(rpcResponse.result);
@@ -176,12 +182,10 @@ namespace PhantasmaPhoenix.Unity.Core
 
         public static IEnumerator RESTGet<T>(string url, int timeout, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback, Action<T> callback)
         {
-            UnityWebRequest request;
-
             var requestNumber = GetNextRequestNumber();
             Log.Write($"REST request [{requestNumber}]\nurl: {url}", Log.Level.Networking);
 
-            request = new UnityWebRequest(url, "GET");
+            using var request = new UnityWebRequest(url, "GET");
             request.downloadHandler = new DownloadHandlerBuffer();
 
             DateTime startTime = DateTime.Now;
@@ -219,14 +223,12 @@ namespace PhantasmaPhoenix.Unity.Core
 
         public static IEnumerator RESTPost<T>(string url, string serializedJson, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback, Action<T> callback)
         {
-            UnityWebRequest request;
-
             var requestNumber = GetNextRequestNumber();
             Log.Write($"REST request (POST) [{requestNumber}]\nurl: {url}", Log.Level.Networking);
 
             Log.Write($"REST request (POST) [{requestNumber}]\nserializedJson: {serializedJson}", Log.Level.Debug1);
 
-            request = new UnityWebRequest(url, "POST");
+            using var request = new UnityWebRequest(url, "POST");
 
             byte[] data = Encoding.UTF8.GetBytes(serializedJson);
             request.uploadHandler = new UploadHandlerRaw(data);
@@ -264,12 +266,10 @@ namespace PhantasmaPhoenix.Unity.Core
 
         public static IEnumerator Ping(string url, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback, Action<TimeSpan> callback)
         {
-            UnityWebRequest request;
-
             var requestNumber = GetNextRequestNumber();
             Log.Write($"Ping url [{requestNumber}]: {url}", Log.Level.Networking);
 
-            request = new UnityWebRequest(url, "GET");
+            using var request = new UnityWebRequest(url, "GET");
             request.downloadHandler = new DownloadHandlerBuffer();
 
             DateTime startTime = DateTime.Now;
