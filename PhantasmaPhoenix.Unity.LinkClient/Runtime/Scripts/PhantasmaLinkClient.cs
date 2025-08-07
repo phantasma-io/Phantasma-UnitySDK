@@ -16,10 +16,10 @@ public class PhantasmaLinkClient : MonoBehaviour
     {
         public readonly string symbol;
         public readonly BigInteger value;
-        public readonly int decimals;
+        public readonly uint decimals;
         public readonly string[] ids;
 
-        public Balance(string symbol, BigInteger value, int decimals, string[] ids)
+        public Balance(string symbol, BigInteger value, uint decimals, string[] ids)
         {
             this.symbol = symbol;
             this.value = value;
@@ -172,7 +172,7 @@ public class PhantasmaLinkClient : MonoBehaviour
                         var symbol = GetValueOrDefault<string>(child, "symbol");
                         var value = GetValueOrDefault<string>(child, "value");
                         var amount = BigInteger.Parse(value);
-                        var decimals = GetValueOrDefault<Int32>(child, "decimals");
+                        var decimals = GetValueOrDefault<UInt32>(child, "decimals");
 
                         string[] ids = child["ids"] is JArray arr
                             ? arr.Select(x => x?.Value<string>() ?? "").ToArray()

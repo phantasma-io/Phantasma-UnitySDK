@@ -6,19 +6,23 @@ public class CoreExampleUI : MonoBehaviour
     public Button btnExample01;
     public Button btnExample02;
     public Button btnExample03;
+    public Button btnExample04;
 
     private Example01_GenerateKey example01GameObject;
     private Example02_PublicKeyFromPrivate example02GameObject;
-    private Example03_GetBalance example03GameObject;
+    private Example03_GetAddressBalances example03GameObject;
+    private Example04_GetAddressTokenBalance example04GameObject;
 
     private void Start()
     {
         example01GameObject = gameObject.AddComponent<Example01_GenerateKey>();
         example02GameObject = gameObject.AddComponent<Example02_PublicKeyFromPrivate>();
-        example03GameObject = gameObject.AddComponent<Example03_GetBalance>();
+        example03GameObject = gameObject.AddComponent<Example03_GetAddressBalances>();
+        example04GameObject = gameObject.AddComponent<Example04_GetAddressTokenBalance>();
 
         btnExample01.onClick.AddListener(example01GameObject.Run);
         btnExample02.onClick.AddListener(example02GameObject.Run);
         btnExample03.onClick.AddListener(example03GameObject.Run);
+        btnExample04.onClick.AddListener(example04GameObject.Run);
     }
 }

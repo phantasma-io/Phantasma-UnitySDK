@@ -16,7 +16,7 @@ public class WalletInputManager : MonoBehaviour
     {
         WalletInteractions.RecipientAddress = recipientInput.text;
         WalletInteractions.Symbol = symbolInput.text;
-        WalletInteractions.Decimals = int.TryParse(decimalsInput.text, out var valueDecimals) ? valueDecimals : null;
+        WalletInteractions.Decimals = uint.TryParse(decimalsInput.text, out var valueDecimals) ? valueDecimals : null;
         WalletInteractions.Amount = decimal.TryParse(amountInput.text, out var valueAmount) ? valueAmount : 0;
         WalletInteractions.Payload = payloadInput.text;
         WalletInteractions.Chain = string.IsNullOrWhiteSpace(chainInput.text) ? "main" : chainInput.text;

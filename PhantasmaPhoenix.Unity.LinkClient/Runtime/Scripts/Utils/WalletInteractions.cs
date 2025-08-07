@@ -12,7 +12,7 @@ public class WalletInteractions : MonoBehaviour
     public static string PhantasmaRpc = "https://testnet.phantasma.io/rpc";
     public static string RecipientAddress;
     public static string Symbol;
-    public static int? Decimals;
+    public static uint? Decimals;
     public static decimal Amount;
     public static string Chain;
     public static string Payload;
