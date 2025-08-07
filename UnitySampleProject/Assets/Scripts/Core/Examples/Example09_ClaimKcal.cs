@@ -2,11 +2,9 @@ using UnityEngine;
 using System;
 using PhantasmaPhoenix.VM;
 using PhantasmaPhoenix.Cryptography;
-using PhantasmaPhoenix.Core;
-using PhantasmaPhoenix.Protocol;
 
-// Unity MonoBehaviour used to demonstrate how to stake SOUL tokens
-public class Example07_StakeSoul : MonoBehaviour
+// Unity MonoBehaviour used to demonstrate how to claim all KCAL tokens earned from SOUL staking
+public class Example09_ClaimKcal : MonoBehaviour
 {
     // Entry point of example
     public void Run()
@@ -31,9 +29,6 @@ public class Example07_StakeSoul : MonoBehaviour
         // Target chain Nexus name (e.g. "testnet" or "mainnet") - configured in the Unity inspector
         var nexus = manager.Nexus;
 
-        // Amount to stake - configured in the Unity inspector
-        var amount = manager.TokenAmount;
-
         // Not used right now, use as is
         var feePrice = 100000; // TODO: Adapt to new fee model.
         var feeLimit = 21000; // TODO: Adapt to new fee model.
@@ -47,8 +42,8 @@ public class Example07_StakeSoul : MonoBehaviour
             // Instruction to allow gas fees for the transaction - required by all transaction scripts
             sb.AllowGas(senderAddress, Address.Null, feePrice, feeLimit);
 
-            // Call the 'Stake' method in the 'stake' contract with sender address and converted to big integer token amount
-            sb.CallContract("stake", "Stake", senderAddress, UnitConversion.ToBigInteger((decimal)amount, DomainSettings.StakingTokenDecimals));
+            // Call the 'Claim' method in the 'stake' contract with sender address
+            sb.CallContract("stake", "Claim", senderAddress, senderAddress);
 
             // Spend gas necessary for transaction execution
             sb.SpendGas(senderAddress);
@@ -63,7 +58,7 @@ public class Example07_StakeSoul : MonoBehaviour
         }
 
         // Sign and send the transaction using the generated script and optional payload comment
-        StartCoroutine(api.SignAndSendTransactionWithPayload(keys, nexus, script, "main", "example7-tx-payload",
+        StartCoroutine(api.SignAndSendTransactionWithPayload(keys, nexus, script, "main", "example9-tx-payload",
             // Callback on success
             (hashText, encodedTx, txHash) =>
             {

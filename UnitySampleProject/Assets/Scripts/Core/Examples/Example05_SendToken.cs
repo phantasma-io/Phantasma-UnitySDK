@@ -27,7 +27,7 @@ public class Example05_SendToken : MonoBehaviour
         // Access the initialized Phantasma API instance
         var api = manager.phantasmaAPI;
 
-        // Target chain Nexus name (e.g. "testnet" or "mainnet")
+        // Target chain Nexus name (e.g. "testnet" or "mainnet") - configured in the Unity inspector
         var nexus = manager.Nexus;
 
         // Recipient address for the token transfer - configured in the Unity inspector
