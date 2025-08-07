@@ -13,6 +13,7 @@ public class Example07_StakeSoul : MonoBehaviour
     {
         // Get reference to the scene-wide manager that stores API config and global variables
         var manager = FindObjectOfType<CoreExampleManager>();
+
         var keys = manager.keys;
 
         // Abort if keys are not initialized - transaction cannot be signed
@@ -29,6 +30,7 @@ public class Example07_StakeSoul : MonoBehaviour
 
         // Target chain Nexus name (e.g. "testnet" or "mainnet")
         var nexus = manager.Nexus;
+        
         // Amount to stake - configured in the Unity inspector
         var amount = manager.TokenAmount;
 
