@@ -10,6 +10,7 @@ public class CoreExampleManager : MonoBehaviour
     public string TokenSymbol = "SOUL";
     public float TokenAmount = 0.01f;
     public string TestAddress = "P2K..."; // Set in Inspector
+    public string TransactionHash = "9749DCDAA37A53397AFB4EA30547C40BBF6ACC5B89B0234737C7A5AF71B0D4F2";
 
     [Header("State")]
     public string PrivateKeyHEX; // Optional: prefilled or generated
@@ -24,7 +25,7 @@ public class CoreExampleManager : MonoBehaviour
     private void Awake()
     {
         phantasmaAPI = new PhantasmaAPI(RpcUrl);
-        if (!string.IsNullOrEmpty(PrivateKeyWIF))
+        if (!string.IsNullOrEmpty(PrivateKeyWIF) || !string.IsNullOrEmpty(PrivateKeyHEX))
         {
             if (!string.IsNullOrEmpty(PrivateKeyWIF))
             {
