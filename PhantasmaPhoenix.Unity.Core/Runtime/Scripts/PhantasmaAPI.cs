@@ -162,10 +162,9 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetBlockByHash(string blockHash, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<string>(Host, "getBlockByHash", timeout, retries, errorHandlingCallback, (result) =>
+            yield return WebClient.RPCRequest<BlockResult>(Host, "getBlockByHash", timeout, retries, errorHandlingCallback, (result) =>
             {
-                var block = JsonUtility.FromJson<BlockResult>(result);
-                callback(block);
+                callback(result);
             }, blockHash);
         }
 
@@ -177,11 +176,10 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator GetBlockByHeight(string chainInput, uint height, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        public IEnumerator GetBlockByHeight(string chainInput, string height, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<string>(Host, "getBlockByHeight", timeout, retries, errorHandlingCallback, (result) => {
-                var block = JsonUtility.FromJson<BlockResult>(result);
-                callback(block);
+            yield return WebClient.RPCRequest<BlockResult>(Host, "getBlockByHeight", timeout, retries, errorHandlingCallback, (result) => {
+                callback(result);
             }, chainInput, height);
         }
         
@@ -194,10 +192,9 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetLatestBlock(string chainInput, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<string>(Host, "getLatestBlock", timeout, retries, errorHandlingCallback, (result) =>
+            yield return WebClient.RPCRequest<BlockResult>(Host, "getLatestBlock", timeout, retries, errorHandlingCallback, (result) =>
             {
-                var block = JsonUtility.FromJson<BlockResult>(result);
-                callback(block);
+                callback(result);
             }, chainInput);
         }
 
@@ -211,9 +208,8 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetTransactionByBlockHashAndIndex(string blockHash, int index, Action<TransactionResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<string>(Host, "getTransactionByBlockHashAndIndex", timeout, retries, errorHandlingCallback, (result) => {
-                var tx = JsonUtility.FromJson<TransactionResult>(result);
-                callback(tx);
+            yield return WebClient.RPCRequest<TransactionResult>(Host, "getTransactionByBlockHashAndIndex", timeout, retries, errorHandlingCallback, (result) => {
+                callback(result);
             }, blockHash, index);
         }
         #endregion
