@@ -12,6 +12,7 @@ public class CoreExampleUI : MonoBehaviour
     public Button btnExample07;
     public Button btnExample08;
     public Button btnExample09;
+    public Button btnExample10;
 
     private Example01_GenerateKey example01GameObject;
     private Example02_PublicKeyFromPrivate example02GameObject;
@@ -22,6 +23,7 @@ public class CoreExampleUI : MonoBehaviour
     private Example07_StakeSoul example07GameObject;
     private Example08_UnstakeSoul example08GameObject;
     private Example09_ClaimKcal example09GameObject;
+    private Example10_WaitIncomingTx_ReadBlocks example10GameObject;
 
     private void Start()
     {
@@ -34,6 +36,7 @@ public class CoreExampleUI : MonoBehaviour
         example07GameObject = gameObject.AddComponent<Example07_StakeSoul>();
         example08GameObject = gameObject.AddComponent<Example08_UnstakeSoul>();
         example09GameObject = gameObject.AddComponent<Example09_ClaimKcal>();
+        example10GameObject = gameObject.AddComponent<Example10_WaitIncomingTx_ReadBlocks>();
 
         btnExample01.onClick.AddListener(example01GameObject.Run);
         btnExample02.onClick.AddListener(example02GameObject.Run);
@@ -44,5 +47,6 @@ public class CoreExampleUI : MonoBehaviour
         btnExample07.onClick.AddListener(example07GameObject.Run);
         btnExample08.onClick.AddListener(example08GameObject.Run);
         btnExample09.onClick.AddListener(example09GameObject.Run);
+        btnExample10.onClick.AddListener(example10GameObject.Run);
     }
 }
