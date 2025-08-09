@@ -58,7 +58,7 @@ public class Example10_WaitIncomingTx_ReadBlocks : MonoBehaviour
         {
             // Fetch block data for the current height
             BlockResult block = null;
-            yield return api.GetBlockByHeight(chain, height.ToString(),
+            yield return api.GetBlockByHeight(chain, height,
                 b => block = b,
                 // Callback for RPC errors (invalid height, network error, etc.)
                 (code, msg) => Debug.LogError($"[Error][{code}] GetBlockByHeight({height}) failed: {msg}"));

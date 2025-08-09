@@ -69,16 +69,16 @@ public class Example05_SendToken : MonoBehaviour
                     return;
                 }
 
-                StartCoroutine(api.SignAndSendTransactionWithPayload(keys, nexus, script, "main", "example5-tx-payload",
+                StartCoroutine(api.SignAndSendTransaction(keys, nexus, script, "main", "example5-tx-payload",
                     // Callback on success
-                    (hashText, encodedTx, txHash) =>
+                    (txHash, encodedTx) =>
                     {
-                        if (!string.IsNullOrEmpty(hashText))
+                        if (!string.IsNullOrEmpty(txHash))
                         {
-                            Debug.Log($"Transaction was sent, hash: {hashText}. Check transaction status using GetTransaction() call");
+                            Debug.Log($"Transaction was sent, hash: {txHash}. Check transaction status using GetTransaction() call");
 
                             // Start polling to track transaction execution status on-chain
-                            StartCoroutine(Example06_CheckTransactionState.CheckTxStateLoop(hashText, null));
+                            StartCoroutine(Example06_CheckTransactionState.CheckTxStateLoop(txHash, null));
 
                             return;
                         }

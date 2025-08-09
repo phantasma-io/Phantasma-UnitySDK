@@ -176,11 +176,11 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator GetBlockByHeight(string chainInput, string height, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        public IEnumerator GetBlockByHeight(string chainInput, long height, Action<BlockResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
             yield return WebClient.RPCRequest<BlockResult>(Host, "getBlockByHeight", timeout, retries, errorHandlingCallback, (result) => {
                 callback(result);
-            }, chainInput, height);
+            }, chainInput, height.ToString());
         }
         
         /// <summary>
@@ -589,28 +589,13 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="nexus"></param>
         /// <param name="script"></param>
         /// <param name="chain"></param>
-        /// <param name="callback"></param>
-        /// <param name="errorHandlingCallback"></param>
-        /// <returns></returns>
-        public IEnumerator SignAndSendTransaction(IKeyPair keys, string nexus, byte[] script, string chain, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
-        {
-            return SignAndSendTransactionWithPayload(keys, nexus, script, chain, new byte[0], callback, errorHandlingCallback, null, timeout, retries);
-        }
-
-        /// <summary>
-        /// Sign and send a transaction with the Payload
-        /// </summary>
-        /// <param name="keys"></param>
-        /// <param name="nexus"></param>
-        /// <param name="script"></param>
-        /// <param name="chain"></param>
         /// <param name="payload"></param>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
         /// <returns></returns>
-        public IEnumerator SignAndSendTransactionWithPayload(IKeyPair keys, string nexus, byte[] script, string chain, string payload, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        public IEnumerator SignAndSendTransaction(IKeyPair keys, string nexus, byte[] script, string chain, string payload, Action<string /*tx hash*/, string /*encoded tx*/> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            return SignAndSendTransactionWithPayload(keys, nexus, script, chain, Encoding.UTF8.GetBytes(payload), callback, errorHandlingCallback, null, timeout, retries);
+            return SignAndSendTransaction(keys, nexus, script, chain, Encoding.UTF8.GetBytes(payload), callback, errorHandlingCallback, null, timeout, retries);
         }
 
         /// <summary>
@@ -625,15 +610,34 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <param name="errorHandlingCallback"></param>
         /// <param name="customSignFunction"></param>
         /// <returns></returns>
-        public IEnumerator SignAndSendTransactionWithPayload(IKeyPair keys, string nexus, byte[] script, string chain, byte[] payload, Action<string, string, Hash> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, Func<byte[], byte[], byte[], byte[]> customSignFunction = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        public IEnumerator SignAndSendTransaction(IKeyPair keys, string nexus, byte[] script, string chain, byte[] payload, Action<string /*tx hash*/, string /*encoded tx*/> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, Func<byte[], byte[], byte[], byte[]> customSignFunction = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
             Log.Write("Sending transaction... script size: " + script.Length);
 
             var tx = new PhantasmaPhoenix.Protocol.Transaction(nexus, chain, script, DateTime.UtcNow + TimeSpan.FromMinutes(20), payload);
 
+            // Local hash we expect to see on the node
             Hash txHash = tx.Sign(keys, customSignFunction);
 
-            yield return SendRawTransaction(Base16.Encode(tx.ToByteArray(true)), txHash, callback, errorHandlingCallback, timeout, retries);
+            var encoded = Base16.Encode(tx.ToByteArray(true));
+
+            // Wrap user callback to validate RPC hash before signaling success
+            Action<string, string, Hash> wrappedCallback = (hashText, encodedTx, rpcHash) =>
+            {
+                // Prefer comparing Hash structs if both are available
+                if (rpcHash != txHash)
+                {
+                    // Treat mismatch as an error and do not invoke success callback
+                    errorHandlingCallback?.Invoke(EPHANTASMA_SDK_ERROR_TYPE.API_ERROR, $"RPC returned different hash {rpcHash}, expected {txHash}");
+                    return;
+                }
+
+                // Hashes match - forward original callback
+                callback?.Invoke(hashText, encodedTx);
+            };
+
+            // Send to network and validate on callback
+            yield return SendRawTransaction(encoded, txHash, wrappedCallback, errorHandlingCallback, timeout, retries);
         }
         #endregion
 

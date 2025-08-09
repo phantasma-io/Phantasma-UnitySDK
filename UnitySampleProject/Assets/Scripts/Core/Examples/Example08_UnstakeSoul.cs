@@ -63,16 +63,16 @@ public class Example08_UnstakeSoul : MonoBehaviour
         }
 
         // Sign and send the transaction using the generated script and optional payload comment
-        StartCoroutine(api.SignAndSendTransactionWithPayload(keys, nexus, script, "main", "example8-tx-payload",
+        StartCoroutine(api.SignAndSendTransaction(keys, nexus, script, "main", "example8-tx-payload",
             // Callback on success
-            (hashText, encodedTx, txHash) =>
+            (txHash, encodedTx) =>
             {
-                if (!string.IsNullOrEmpty(hashText))
+                if (!string.IsNullOrEmpty(txHash))
                 {
-                    Debug.Log($"Transaction was sent, hash: {hashText}. Check transaction status using GetTransaction() call");
+                    Debug.Log($"Transaction was sent, hash: {txHash}. Check transaction status using GetTransaction() call");
 
                     // Start polling to track transaction execution status on-chain
-                    StartCoroutine(Example06_CheckTransactionState.CheckTxStateLoop(hashText, null));
+                    StartCoroutine(Example06_CheckTransactionState.CheckTxStateLoop(txHash, null));
                     return;
                 }
                 else
