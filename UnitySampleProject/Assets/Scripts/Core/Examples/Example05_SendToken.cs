@@ -65,7 +65,7 @@ public class Example05_SendToken : MonoBehaviour
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[Error] Could not built transaction scripts {e}");
+                    Debug.LogError($"[Error] Could not built transaction script {e}");
                     return;
                 }
 

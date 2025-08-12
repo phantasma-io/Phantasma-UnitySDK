@@ -53,7 +53,7 @@ public class Example09_ClaimKcal : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogError($"[Error] Could not built transaction scripts {e}");
+            Debug.LogError($"[Error] Could not built transaction script {e}");
             return;
         }
 
