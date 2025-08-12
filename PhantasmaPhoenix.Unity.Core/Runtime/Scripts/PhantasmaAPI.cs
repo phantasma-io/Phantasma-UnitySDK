@@ -24,7 +24,7 @@ namespace PhantasmaPhoenix.Unity.Core
 
         #region Account
         /// <summary>
-        /// Returns the account name and balance of given address.
+        /// Gets account information, including balances, for the specified address
         /// </summary>
         /// <param name="addressText"></param>
         /// <param name="callback"></param>
@@ -38,7 +38,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
         
         /// <summary>
-        /// Returns the account name and balance of given address.
+        /// Gets account information for multiple addresses
         /// </summary>
         /// <param name="addressText"></param>
         /// <param name="callback"></param>
@@ -58,7 +58,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns the address that owns a given name.
+        /// Looks up an address by name
         /// </summary>
         /// <param name="name"></param>
         /// <param name="callback"></param>
@@ -74,7 +74,8 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Auction
         /// <summary>
-        /// Returns the number of active auctions.
+        /// Gets the number of auctions currently available in the market contract for a given token
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="chainAddressOrName"></param>
         /// <param name="symbol"></param>
@@ -89,7 +90,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns the auctions available in the market.
+        /// Gets all auctions currently available in the market contract for a given token, with pagination
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="chainAddressOrName"></param>
         /// <param name="symbol"></param>
@@ -107,7 +109,8 @@ namespace PhantasmaPhoenix.Unity.Core
 
 
         /// <summary>
-        /// Returns the auction for a specific token and ID
+        /// Gets a single auction by symbol and auction id
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="chainAddressOrName"></param>
         /// <param name="symbol"></param>
@@ -125,7 +128,7 @@ namespace PhantasmaPhoenix.Unity.Core
 
         #region Block
         /// <summary>
-        /// Returns the height of a chain.
+        /// Gets the latest block height for a chain
         /// </summary>
         /// <param name="chainInput"></param>
         /// <param name="callback"></param>
@@ -140,7 +143,7 @@ namespace PhantasmaPhoenix.Unity.Core
 
 
         /// <summary>
-        /// Returns the number of transactions of given block hash or error if given hash is invalid or is not found.
+        /// Gets the number of transactions in a block by block hash
         /// </summary>
         /// <param name="blockHash"></param>
         /// <param name="callback"></param>
@@ -154,7 +157,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns information about a block by hash.
+        /// Gets a block by its hash
         /// </summary>
         /// <param name="blockHash"></param>
         /// <param name="callback"></param>
@@ -169,7 +172,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns information about a block by height and chain.
+        /// Gets a block by chain and height
         /// </summary>
         /// <param name="chainInput"></param>
         /// <param name="height"></param>
@@ -184,7 +187,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
         
         /// <summary>
-        /// Returns information about a block by hash.
+        /// Gets the latest block for a chain
         /// </summary>
         /// <param name="blockHash"></param>
         /// <param name="callback"></param>
@@ -199,7 +202,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns the information about a transaction requested by a block hash and transaction index.
+        /// Gets a transaction by block hash and transaction index
         /// </summary>
         /// <param name="blockHash"></param>
         /// <param name="index"></param>
@@ -216,7 +219,8 @@ namespace PhantasmaPhoenix.Unity.Core
 
         #region Chain
         /// <summary>
-        /// Returns an array of all chains deployed in Phantasma.
+        /// Gets an array of all chains deployed on Phantasma
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
@@ -231,7 +235,8 @@ namespace PhantasmaPhoenix.Unity.Core
 
         #region Contract
         /// <summary>
-        /// Returns the ContractData
+        /// Gets contract metadata by name from the main chain
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="contractName"></param>
         /// <param name="callback"></param>
@@ -245,7 +250,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
         
         /// <summary>
-        /// Returns an array of ContractData
+        /// Gets all contracts deployed on the main chain
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
@@ -260,7 +266,8 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Leaderboard
         /// <summary>
-        /// Return the Leaderboard for a specific address
+        /// Gets a leaderboard by name
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="name"></param>
         /// <param name="callback"></param>
@@ -276,7 +283,8 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Nexus
         /// <summary>
-        /// Returns an array of all chains deployed in Phantasma.
+        /// Gets nexus metadata including an array of all chains deployed on Phantasma
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
@@ -291,7 +299,8 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Organization
         /// <summary>
-        /// Returns the organization with the given ID.
+        /// Gets organization data by id
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="ID"></param>
         /// <param name="callback"></param>
@@ -305,7 +314,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
         
         /// <summary>
-        /// Returns the organization with the given name.
+        /// Gets organization data by name
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="name"></param>
         /// <param name="callback"></param>
@@ -319,7 +329,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
         
         /// <summary>
-        /// Returns all organizations
+        /// Gets all organizations deployed on Phantasma
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
@@ -336,7 +347,7 @@ namespace PhantasmaPhoenix.Unity.Core
         private int tokensLoadedSimultaneously = 0;
 
         /// <summary>
-        /// Returns info about a specific token deployed in Phantasma.
+        /// Gets token metadata by symbol
         /// </summary>
         /// <param name="symbol"></param>
         /// <param name="callback"></param>
@@ -350,7 +361,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns an array of tokens deployed in Phantasma.
+        /// Gets an array of all tokens deployed on Phantasma
         /// </summary>
         /// <param name="callback"></param>
         /// <param name="errorHandlingCallback"></param>
@@ -363,7 +374,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns data of a non-fungible token, in hexadecimal format.
+        /// Gets token data for a specific token id
+        /// <para><b>⚠️ This functionality is only partially implemented - some features may be missing or incomplete. See the roadmap for planned updates: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="symbol"></param>
         /// <param name="IDtext"></param>
@@ -386,7 +398,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns data of a non-fungible token, in hexadecimal format.
+        /// Gets NFT data and optionally loads properties
+        /// <para><b>⚠️ This functionality is only partially implemented - some features may be missing or incomplete. See the roadmap for planned updates: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="symbol"></param>
         /// <param name="IDtext"></param>
@@ -415,7 +428,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns data of a non-fungible tokens, in hexadecimal format.
+        /// Gets NFT data for multiple token ids
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="symbol"></param>
         /// <param name="IDtext"></param>
@@ -439,7 +453,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns the token balance for a specific address and token symbol
+        /// Gets the token balance for a given address and token symbol
         /// </summary>
         /// <param name="account"></param>
         /// <param name="tokenSymbol"></param>
@@ -457,7 +471,7 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Transaction
         /// <summary>
-        /// Returns last X transactions of given address.
+        /// Gets address transactions with pagination
         /// This api call is paginated, multiple calls might be required to obtain a complete result 
         /// </summary>
         /// <param name="addressText"></param>
@@ -474,7 +488,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Get number of transactions in a specific address and chain
+        /// Gets the number of transactions for an address on a chain
         /// </summary>
         /// <param name="addressText"></param>
         /// <param name="chainInput"></param>
@@ -489,7 +503,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Allows to broadcast a signed operation on the network, but it&apos;s required to build it manually.
+        /// Broadcasts a transaction in hexadecimal encoding
         /// </summary>
         /// <param name="txData"></param>
         /// <param name="callback"></param>
@@ -504,7 +518,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Allows to invoke script based on network state, without state changes.
+        /// Invokes a VM script without state changes and returns its result
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="chainInput"></param>
         /// <param name="scriptData"></param>
@@ -519,7 +534,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns information about a transaction by hash.
+        /// Gets a transaction by its hash if available
         /// </summary>
         /// <param name="hashText"></param>
         /// <param name="callback"></param>
@@ -535,7 +550,8 @@ namespace PhantasmaPhoenix.Unity.Core
 
         #region Storage
         /// <summary>
-        /// Returns info about a specific archive.
+        /// Gets archive metadata by its hash
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="hashText"></param>
         /// <param name="callback"></param>
@@ -549,7 +565,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Writes the contents of an incomplete archive.
+        /// Writes a single archive block
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="hashText"></param>
         /// <param name="blockIndex"></param>
@@ -566,7 +583,8 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns the archive info
+        /// Reads a single archive block as a base64 string
+        /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
         /// <param name="hashText"></param>
         /// <param name="blockIndex"></param>
@@ -583,7 +601,7 @@ namespace PhantasmaPhoenix.Unity.Core
         
         #region Other Transaction Methods
         /// <summary>
-        /// Sign and send a transaction with the Payload
+        /// Sign and send a transaction with the payload
         /// </summary>
         /// <param name="keys"></param>
         /// <param name="nexus"></param>
@@ -599,7 +617,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Sign and send a transaction with the Payload
+        /// Sign and send a transaction with the payload
         /// </summary>
         /// <param name="keys"></param>
         /// <param name="nexus"></param>
@@ -642,7 +660,7 @@ namespace PhantasmaPhoenix.Unity.Core
         #endregion
 
         /// <summary>
-        /// Returns if it's a valid private key
+        /// Validates a WIF-formatted private key string
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
@@ -653,7 +671,7 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
-        /// Returns if it's a valid address
+        /// Validates the format of a Phantasma address string
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
