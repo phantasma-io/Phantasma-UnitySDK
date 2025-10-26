@@ -3,6 +3,8 @@ using System.Collections;
 using System.Globalization;
 using System.Text;
 using PhantasmaPhoenix.Cryptography;
+using PhantasmaPhoenix.Protocol.Carbon;
+using PhantasmaPhoenix.Protocol.Carbon.Blockchain;
 using PhantasmaPhoenix.RPC.Models;
 using PhantasmaPhoenix.RPC.Types;
 using PhantasmaPhoenix.Unity.Core.Logging;
@@ -518,6 +520,21 @@ namespace PhantasmaPhoenix.Unity.Core
         }
 
         /// <summary>
+        /// Broadcasts a carbon transaction in hexadecimal encoding
+        /// </summary>
+        /// <param name="txData"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator SendCarbonTransaction(string txData, Action<string, string> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return WebClient.RPCRequest<string>(Host, "sendCarbonTransaction", timeout, retries, errorHandlingCallback, (result) =>
+            {
+                callback(result, txData);
+            }, txData);
+        }
+
+        /// <summary>
         /// Invokes a VM script without state changes and returns its result
         /// <para><b>⚠️ Currently disabled - this functionality is not available and will be re-enabled according to the roadmap: https://phantasma.info/blockchain#roadmap</b></para>
         /// </summary>
@@ -656,6 +673,38 @@ namespace PhantasmaPhoenix.Unity.Core
 
             // Send to network and validate on callback
             yield return SendRawTransaction(encoded, txHash, wrappedCallback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Signs, serializes and broadcasts a carbon transaction
+        /// </summary>
+        /// <param name="keys">Key pair used to sign a transaction</param>
+        /// <param name="txMsg">Carbon TxMsg struct</param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <param name="customSignFunction"></param>
+        /// <returns></returns>
+        public IEnumerator SignAndSendCarbonTransaction(IKeyPair keys, TxMsg txMsg, Action<string /*tx hash*/, string /*encoded tx*/> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            Log.Write("Sending carbon transaction...");
+
+            var signedTxMsg = new SignedTxMsg
+            {
+                msg = txMsg,
+                witnesses = new Witness[] {
+                new Witness
+                {
+                    address = new Bytes32(keys.PublicKey),
+                    signature = new Bytes64(Ed25519.Sign(CarbonBlob.Serialize(txMsg), keys.PrivateKey))
+                }
+            }
+            };
+
+            var signedTxBytes = CarbonBlob.Serialize(signedTxMsg);
+            var encoded = Base16.Encode(signedTxBytes);
+
+            // Send to network and validate on callback
+            yield return SendCarbonTransaction(encoded, callback, errorHandlingCallback, timeout, retries);
         }
         #endregion
 
