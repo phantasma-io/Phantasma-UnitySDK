@@ -98,16 +98,18 @@ namespace PhantasmaPhoenix.Unity.Core
             var requestNumber = GetNextRequestNumber().ToString();
             var rpcRequest = new JsonRpcRequest(method, parameters, requestNumber);
             var json = JsonConvert.SerializeObject(rpcRequest);
-
-            Log.Write($"RPC request [{requestNumber}]\nurl: {url}\njson: {json}", Log.Level.Networking);
+            var paramCount = parameters?.Length ?? 0;
 
             byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+            Log.Write($"RPC request [{requestNumber}]\nurl: {url}\nmethod: {method}\nparams: {paramCount}\nbodyBytes: {bodyRaw.Length}", Log.Level.Networking);
+            Log.Write($"RPC request [{requestNumber}]\nurl: {url}\njson: {json}", Log.Level.Debug1);
 
             DateTime startTime = DateTime.Now;
 
             UnityWebRequest.Result? result = null;
             string response = null;
             string formattedError = null;
+            long responseCode = 0;
 
             for (; ; )
             {
@@ -120,6 +122,7 @@ namespace PhantasmaPhoenix.Unity.Core
 
                 yield return request.SendWebRequest();
                 result = request.result;
+                responseCode = request.responseCode;
                 response = request.downloadHandler.text;
                 if (result == UnityWebRequest.Result.ConnectionError || result == UnityWebRequest.Result.ProtocolError || result == UnityWebRequest.Result.DataProcessingError)
                 {
@@ -147,7 +150,9 @@ namespace PhantasmaPhoenix.Unity.Core
             }
             else
             {
-                Log.Write($"RPC response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{response}", Log.Level.Networking);
+                var responseBytes = string.IsNullOrEmpty(response) ? 0 : Encoding.UTF8.GetByteCount(response);
+                Log.Write($"RPC response [{requestNumber}]\nurl: {url}\nstatus: {responseCode}\nelapsedMs: {(long)responseTime.TotalMilliseconds}\nbodyBytes: {responseBytes}", Log.Level.Networking);
+                Log.Write($"RPC response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{response}", Log.Level.Debug1);
 
                 try
                 {
@@ -208,8 +213,11 @@ namespace PhantasmaPhoenix.Unity.Core
                 T response = default;
                 try
                 {
-                    Log.Write($"REST response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{request.downloadHandler.text}", Log.Level.Networking);
-                    response = ParseResponse<T>(request.downloadHandler.text);
+                    var responseText = request.downloadHandler.text;
+                    var responseBytes = string.IsNullOrEmpty(responseText) ? 0 : Encoding.UTF8.GetByteCount(responseText);
+                    Log.Write($"REST response [{requestNumber}]\nurl: {url}\nstatus: {request.responseCode}\nelapsedMs: {(long)responseTime.TotalMilliseconds}\nbodyBytes: {responseBytes}", Log.Level.Networking);
+                    Log.Write($"REST response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{responseText}", Log.Level.Debug1);
+                    response = ParseResponse<T>(responseText);
                 }
                 catch(Exception e)
                 {
@@ -224,7 +232,7 @@ namespace PhantasmaPhoenix.Unity.Core
         public static IEnumerator RESTPost<T>(string url, string serializedJson, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback, Action<T> callback)
         {
             var requestNumber = GetNextRequestNumber();
-            Log.Write($"REST request (POST) [{requestNumber}]\nurl: {url}", Log.Level.Networking);
+            Log.Write($"REST request (POST) [{requestNumber}]\nurl: {url}\nbodyBytes: {Encoding.UTF8.GetByteCount(serializedJson)}", Log.Level.Networking);
 
             Log.Write($"REST request (POST) [{requestNumber}]\nserializedJson: {serializedJson}", Log.Level.Debug1);
 
@@ -247,12 +255,15 @@ namespace PhantasmaPhoenix.Unity.Core
             }
             else
             {
-                Log.Write($"REST response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{request.downloadHandler.text}", Log.Level.Networking);
+                var responseText = request.downloadHandler.text;
+                var responseBytes = string.IsNullOrEmpty(responseText) ? 0 : Encoding.UTF8.GetByteCount(responseText);
+                Log.Write($"REST response [{requestNumber}]\nurl: {url}\nstatus: {request.responseCode}\nelapsedMs: {(long)responseTime.TotalMilliseconds}\nbodyBytes: {responseBytes}", Log.Level.Networking);
+                Log.Write($"REST response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{responseText}", Log.Level.Debug1);
 
                 T response = default;
                 try
                 {
-                    response = ParseResponse<T>(request.downloadHandler.text);
+                    response = ParseResponse<T>(responseText);
                 }
                 catch(Exception e)
                 {
@@ -286,7 +297,10 @@ namespace PhantasmaPhoenix.Unity.Core
             }
             else
             {
-                Log.Write($"Ping response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{request.downloadHandler.text}", Log.Level.Networking);
+                var responseText = request.downloadHandler.text;
+                var responseBytes = string.IsNullOrEmpty(responseText) ? 0 : Encoding.UTF8.GetByteCount(responseText);
+                Log.Write($"Ping response [{requestNumber}]\nurl: {url}\nelapsedMs: {(long)responseTime.TotalMilliseconds}\nbodyBytes: {responseBytes}", Log.Level.Networking);
+                Log.Write($"Ping response [{requestNumber}]\nurl: {url}\nResponse time: {responseTime.Seconds}.{responseTime.Milliseconds} sec\n{responseText}", Log.Level.Debug1);
                 callback(responseTime);
             }
 
