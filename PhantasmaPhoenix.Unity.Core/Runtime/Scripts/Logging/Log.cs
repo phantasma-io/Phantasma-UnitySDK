@@ -37,6 +37,11 @@ namespace PhantasmaPhoenix.Unity.Core.Logging
         private static bool UtcTimestamp = true;
         private static bool MultilinePadding = true;
         private static bool AddTid = false;
+        // Thread-local guard so Unity log hooks can detect when Log.Write is emitting to Unity Debug,
+        // avoiding re-logging and duplicate entries while keeping external Unity logs intact.
+        [ThreadStatic] private static int WriteDepth;
+
+        public static bool IsWriting => WriteDepth > 0;
 
         private static object Locker = new object();
 
@@ -140,116 +145,132 @@ namespace PhantasmaPhoenix.Unity.Core.Logging
 
         public static void Write(string message, Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
         {
-            if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
+            WriteDepth++;
+            try
             {
-                DateTime _now = DateTime.Now;
-
-                string _additional_padding = "";
-                switch (level)
+                if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
                 {
-                    case Level.Logic:
-                        break;
-                    case Level.Networking:
-                        _additional_padding = "<-> ";
-                        break;
-                    case Level.Debug1:
-                        _additional_padding = new String(' ', 8);
-                        break;
-                    case Level.Debug2:
-                        _additional_padding = new String(' ', 12);
-                        break;
-                    case Level.Debug3:
-                        _additional_padding = new String(' ', 16);
-                        break;
-                }
+                    DateTime _now = DateTime.Now;
 
-                // Prefix length: 28 symbols.
-                string _timestamp_prefix_local = "[" + _now.ToString("yyyy.MM.dd HH:mm:ss:ffff") + ((AddTid && Thread.CurrentThread.ManagedThreadId != 1) ? " tid: " + Thread.CurrentThread.ManagedThreadId.ToString() : "") + "]: " + _additional_padding;
-                string _empty_prefix = new String(' ', 28) + _additional_padding;
-                string _timestamp_prefix_utc = UtcTimestamp ? "[" + _now.ToUniversalTime().ToString("yyyy.MM.dd HH:mm") + " UTC    ]  " + _additional_padding : _empty_prefix;
-
-                string preparedMessage = "";
-                int _line_count = 0;
-                foreach (var _line in message.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    _line_count++;
-
-                    switch (_line_count)
+                    string _additional_padding = "";
+                    switch (level)
                     {
-                        case 1:
-                            preparedMessage += _timestamp_prefix_local + _line + Environment.NewLine;
+                        case Level.Logic:
                             break;
-                        case 2:
-                            preparedMessage += (MultilinePadding ? _timestamp_prefix_utc : "") + _line + Environment.NewLine;
+                        case Level.Networking:
+                            _additional_padding = "<-> ";
                             break;
-                        default:
-                            preparedMessage += (MultilinePadding ? _empty_prefix : "") + _line + Environment.NewLine;
+                        case Level.Debug1:
+                            _additional_padding = new String(' ', 8);
+                            break;
+                        case Level.Debug2:
+                            _additional_padding = new String(' ', 12);
+                            break;
+                        case Level.Debug3:
+                            _additional_padding = new String(' ', 16);
                             break;
                     }
-                }
 
-                if (!CompactMode)
-                {
-                    if (_line_count < 2 && UtcTimestamp)
+                    // Prefix length: 28 symbols.
+                    string _timestamp_prefix_local = "[" + _now.ToString("yyyy.MM.dd HH:mm:ss:ffff") + ((AddTid && Thread.CurrentThread.ManagedThreadId != 1) ? " tid: " + Thread.CurrentThread.ManagedThreadId.ToString() : "") + "]: " + _additional_padding;
+                    string _empty_prefix = new String(' ', 28) + _additional_padding;
+                    string _timestamp_prefix_utc = UtcTimestamp ? "[" + _now.ToUniversalTime().ToString("yyyy.MM.dd HH:mm") + " UTC    ]  " + _additional_padding : _empty_prefix;
+
+                    string preparedMessage = "";
+                    int _line_count = 0;
+                    foreach (var _line in message.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        preparedMessage += _timestamp_prefix_utc + Environment.NewLine;
+                        _line_count++;
+
+                        switch (_line_count)
+                        {
+                            case 1:
+                                preparedMessage += _timestamp_prefix_local + _line + Environment.NewLine;
+                                break;
+                            case 2:
+                                preparedMessage += (MultilinePadding ? _timestamp_prefix_utc : "") + _line + Environment.NewLine;
+                                break;
+                            default:
+                                preparedMessage += (MultilinePadding ? _empty_prefix : "") + _line + Environment.NewLine;
+                                break;
+                        }
                     }
 
-                    preparedMessage += "" + Environment.NewLine;
-                }
+                    if (!CompactMode)
+                    {
+                        if (_line_count < 2 && UtcTimestamp)
+                        {
+                            preparedMessage += _timestamp_prefix_utc + Environment.NewLine;
+                        }
 
-                lock (Locker)
-                {
-                    if (ConsoleOutput)
-                        Console.Write(preparedMessage);
-                    LogStreamWriter.Write(preparedMessage);
-                    LogStreamWriter.Flush();
+                        preparedMessage += "" + Environment.NewLine;
+                    }
+
+                    lock (Locker)
+                    {
+                        if (ConsoleOutput)
+                            Console.Write(preparedMessage);
+                        LogStreamWriter.Write(preparedMessage);
+                        LogStreamWriter.Flush();
+                    }
                 }
-            }
 
 #if UNITY_5_3_OR_NEWER
-            switch (unityDebugLogMode)
-            {
-                case UnityDebugLogMode.Normal:
-                    Debug.Log(message);
-                    break;
-                case UnityDebugLogMode.Warning:
-                    Debug.LogWarning(message);
-                    break;
-                case UnityDebugLogMode.Error:
-                    Debug.LogError(message);
-                    break;
-            }
+                switch (unityDebugLogMode)
+                {
+                    case UnityDebugLogMode.Normal:
+                        Debug.Log(message);
+                        break;
+                    case UnityDebugLogMode.Warning:
+                        Debug.LogWarning(message);
+                        break;
+                    case UnityDebugLogMode.Error:
+                        Debug.LogError(message);
+                        break;
+                }
 #endif
+            }
+            finally
+            {
+                WriteDepth--;
+            }
         }
 
         public static void WriteRaw(string message, Level level = Level.Logic, UnityDebugLogMode unityDebugLogMode = UnityDebugLogMode.Normal)
         {
-            if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
+            WriteDepth++;
+            try
             {
-                lock (Locker)
+                if (IsInitialized && MaxLevel != Level.Disabled && level <= MaxLevel)
                 {
-                    if (ConsoleOutput)
-                        Console.Write(message);
-                    LogStreamWriter.Write(message);
-                    LogStreamWriter.Flush();
+                    lock (Locker)
+                    {
+                        if (ConsoleOutput)
+                            Console.Write(message);
+                        LogStreamWriter.Write(message);
+                        LogStreamWriter.Flush();
+                    }
                 }
-            }
 
 #if UNITY_5_3_OR_NEWER
-            switch (unityDebugLogMode)
-            {
-                case UnityDebugLogMode.Normal:
-                    Debug.Log(message);
-                    break;
-                case UnityDebugLogMode.Warning:
-                    Debug.LogWarning(message);
-                    break;
-                case UnityDebugLogMode.Error:
-                    Debug.LogError(message);
-                    break;
-            }
+                switch (unityDebugLogMode)
+                {
+                    case UnityDebugLogMode.Normal:
+                        Debug.Log(message);
+                        break;
+                    case UnityDebugLogMode.Warning:
+                        Debug.LogWarning(message);
+                        break;
+                    case UnityDebugLogMode.Error:
+                        Debug.LogError(message);
+                        break;
+                }
 #endif
+            }
+            finally
+            {
+                WriteDepth--;
+            }
         }
     }
 }
