@@ -1,0 +1,15 @@
+{
+  "name": "PhantasmaPhoenix.Unity.Core.Tests",
+  "references": [
+    "PhantasmaPhoenix.Unity.Core"
+  ],
+  "precompiledReferences": [
+    "PhantasmaPhoenix.RPC.dll"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

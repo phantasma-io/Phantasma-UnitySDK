@@ -24,6 +24,16 @@ namespace PhantasmaPhoenix.Unity.Core
             this.Host = host;
         }
 
+        /// <summary>
+        /// Centralized RPC entry point for wrapper methods.
+        /// Keeping the transport behind a protected virtual seam lets the Unity test project
+        /// verify exact JSON-RPC method/parameter shaping without relying on flaky local HTTP listeners.
+        /// </summary>
+        protected virtual IEnumerator RpcRequest<T>(string method, Action<T> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries, params object[] parameters)
+        {
+            yield return WebClient.RPCRequest<T>(Host, method, timeout, retries, errorHandlingCallback, callback, parameters);
+        }
+
         #region Account
         /// <summary>
         /// Gets account information, including balances, for the specified address
@@ -34,9 +44,22 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetAccount(string addressText, Action<AccountResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<AccountResult>(Host, "getAccount", timeout, retries, errorHandlingCallback, (result) => {
-                callback(result);
-            }, addressText);
+            yield return RpcRequest("getAccount", callback, errorHandlingCallback, timeout, retries, addressText);
+        }
+
+        /// <summary>
+        /// Gets account information, including balances, for the specified address and address type
+        /// </summary>
+        /// <param name="addressText"></param>
+        /// <param name="extended"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccount(string addressText, bool extended, bool checkAddressReservedByte, RpcAddressType addressType, Action<AccountResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccount", callback, errorHandlingCallback, timeout, retries, addressText, extended, checkAddressReservedByte, addressType);
         }
         
         /// <summary>
@@ -54,9 +77,28 @@ namespace PhantasmaPhoenix.Unity.Core
                 yield break;
             }
             
-            yield return WebClient.RPCRequest<AccountResult[]>(Host, "getAccounts", timeout, retries, errorHandlingCallback, (result) => {
-                callback(result);
-            }, String.Join(",",addresses));
+            yield return RpcRequest("getAccounts", callback, errorHandlingCallback, timeout, retries, String.Join(",", addresses));
+        }
+
+        /// <summary>
+        /// Gets account information for multiple addresses of the same address type
+        /// </summary>
+        /// <param name="addresses"></param>
+        /// <param name="extended"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccounts(string[] addresses, bool extended, bool checkAddressReservedByte, RpcAddressType addressType, Action<AccountResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            if (addresses == null || addresses.Length == 0)
+            {
+                callback(new AccountResult[0]);
+                yield break;
+            }
+
+            yield return RpcRequest("getAccounts", callback, errorHandlingCallback, timeout, retries, String.Join(",", addresses), extended, checkAddressReservedByte, addressType);
         }
 
         /// <summary>
@@ -71,6 +113,198 @@ namespace PhantasmaPhoenix.Unity.Core
             yield return WebClient.RPCRequest<string>(Host, "lookUpName", timeout, retries, errorHandlingCallback, (result) => {
                 callback(result);
             }, name);
+        }
+
+        /// <summary>
+        /// Gets fungible token balances owned by an address (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountFungibleTokens(string account, Action<CursorPaginatedResult<BalanceResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetAccountFungibleTokens(account, "", 0, 10, "", true, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets fungible token balances owned by an address (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountFungibleTokens(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, Action<CursorPaginatedResult<BalanceResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountFungibleTokens", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte);
+        }
+
+        /// <summary>
+        /// Gets fungible token balances owned by an address of the specified address type (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountFungibleTokens(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, RpcAddressType addressType, Action<CursorPaginatedResult<BalanceResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountFungibleTokens", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte, addressType);
+        }
+
+        /// <summary>
+        /// Gets NFTs owned by an address (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountNFTs(string account, Action<CursorPaginatedResult<TokenDataResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetAccountNFTs(account, "", 0, 0, 10, "", false, true, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets NFTs owned by an address (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="carbonSeriesId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="extended"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountNFTs(string account, string tokenSymbol, ulong carbonTokenId, uint carbonSeriesId, uint pageSize, string cursor, bool extended, bool checkAddressReservedByte, Action<CursorPaginatedResult<TokenDataResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountNFTs", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, carbonSeriesId, pageSize, cursor, extended, checkAddressReservedByte);
+        }
+
+        /// <summary>
+        /// Gets NFTs owned by an address of the specified address type (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="carbonSeriesId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="extended"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountNFTs(string account, string tokenSymbol, ulong carbonTokenId, uint carbonSeriesId, uint pageSize, string cursor, bool extended, bool checkAddressReservedByte, RpcAddressType addressType, Action<CursorPaginatedResult<TokenDataResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountNFTs", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, carbonSeriesId, pageSize, cursor, extended, checkAddressReservedByte, addressType);
+        }
+
+        /// <summary>
+        /// Gets NFT tokens for which the account owns at least one NFT instance (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokens(string account, Action<CursorPaginatedResult<TokenResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetAccountOwnedTokens(account, "", 0, 10, "", true, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets NFT tokens for which the account owns at least one NFT instance (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokens(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, Action<CursorPaginatedResult<TokenResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountOwnedTokens", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte);
+        }
+
+        /// <summary>
+        /// Gets NFT tokens for which the account owns at least one NFT instance for the specified address type (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokens(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, RpcAddressType addressType, Action<CursorPaginatedResult<TokenResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountOwnedTokens", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte, addressType);
+        }
+
+        /// <summary>
+        /// Gets NFT series for which the account owns at least one NFT instance (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokenSeries(string account, Action<CursorPaginatedResult<TokenSeriesResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetAccountOwnedTokenSeries(account, "", 0, 10, "", true, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets NFT series for which the account owns at least one NFT instance (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokenSeries(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, Action<CursorPaginatedResult<TokenSeriesResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountOwnedTokenSeries", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte);
+        }
+
+        /// <summary>
+        /// Gets NFT series for which the account owns at least one NFT instance for the specified address type (cursor pagination)
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetAccountOwnedTokenSeries(string account, string tokenSymbol, ulong carbonTokenId, uint pageSize, string cursor, bool checkAddressReservedByte, RpcAddressType addressType, Action<CursorPaginatedResult<TokenSeriesResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getAccountOwnedTokenSeries", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, carbonTokenId, pageSize, cursor, checkAddressReservedByte, addressType);
         }
         #endregion
         
@@ -153,9 +387,27 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetBlockTransactionCountByHash(string blockHash, Action<int> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<string>(Host, "getBlockTransactionCountByHash", timeout, retries, errorHandlingCallback, (result) => {
-                callback(int.Parse(result));
-            }, blockHash);
+            /*
+             * Preserve the legacy Unity SDK signature for existing callers.
+             * Carbon RPC now requires the chain/name parameter as well, so the compatibility
+             * overload assumes the root chain exactly like other legacy wrapper methods do.
+             */
+            yield return GetBlockTransactionCountByHash(PhantasmaPhoenix.Protocol.DomainSettings.RootChainName, blockHash, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets the number of transactions in a block by chain and block hash
+        /// </summary>
+        /// <param name="chainAddressOrName"></param>
+        /// <param name="blockHash"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetBlockTransactionCountByHash(string chainAddressOrName, string blockHash, Action<int> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getBlockTransactionCountByHash", (string result) => {
+                callback(int.Parse(result, CultureInfo.InvariantCulture));
+            }, errorHandlingCallback, timeout, retries, chainAddressOrName, blockHash);
         }
 
         /// <summary>
@@ -249,6 +501,19 @@ namespace PhantasmaPhoenix.Unity.Core
             yield return WebClient.RPCRequest<ContractResult>(Host, "getContract", timeout, retries, errorHandlingCallback, (result) => {
                 callback(result);
             }, PhantasmaPhoenix.Protocol.DomainSettings.RootChainName, contractName);
+        }
+
+        /// <summary>
+        /// Gets contract metadata by address from the specified chain
+        /// </summary>
+        /// <param name="chainAddressOrName"></param>
+        /// <param name="contractAddress"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetContractByAddress(string chainAddressOrName, string contractAddress, Action<ContractResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getContractByAddress", callback, errorHandlingCallback, timeout, retries, chainAddressOrName, contractAddress);
         }
         
         /// <summary>
@@ -357,9 +622,21 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetToken(string symbol, Action<TokenResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<TokenResult>(Host, "getToken", timeout, retries, errorHandlingCallback, (result) => {
-                callback(result);
-            }, symbol);
+            yield return RpcRequest("getToken", callback, errorHandlingCallback, timeout, retries, symbol);
+        }
+
+        /// <summary>
+        /// Gets token metadata by symbol or carbon token id
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="extended"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetToken(string symbol, bool extended, ulong carbonTokenId, Action<TokenResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getToken", callback, errorHandlingCallback, timeout, retries, symbol, extended, carbonTokenId);
         }
 
         /// <summary>
@@ -370,9 +647,116 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetTokens(Action<TokenResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
-            yield return WebClient.RPCRequest<TokenResult[]>(Host, "getTokens", timeout, retries, errorHandlingCallback, (result) => {
-                callback(result);
-            });
+            yield return RpcRequest("getTokens", callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets an array of all tokens deployed on Phantasma with extended payload enabled
+        /// </summary>
+        /// <param name="extended"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokens(bool extended, Action<TokenResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokens", callback, errorHandlingCallback, timeout, retries, extended, null);
+        }
+
+        /// <summary>
+        /// Gets an array of all tokens deployed on Phantasma with optional owner filtering
+        /// </summary>
+        /// <param name="extended"></param>
+        /// <param name="ownerAddress"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokens(bool extended, string ownerAddress, Action<TokenResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokens", callback, errorHandlingCallback, timeout, retries, extended, ownerAddress);
+        }
+
+        /// <summary>
+        /// Gets an array of all tokens deployed on Phantasma with optional owner filtering and explicit owner address type
+        /// </summary>
+        /// <param name="extended"></param>
+        /// <param name="ownerAddress"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokens(bool extended, string ownerAddress, RpcAddressType addressType, Action<TokenResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokens", callback, errorHandlingCallback, timeout, retries, extended, ownerAddress, addressType);
+        }
+
+        /// <summary>
+        /// Gets token series for a token (cursor pagination)
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenSeries(Action<CursorPaginatedResult<TokenSeriesResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetTokenSeries("", 0, 10, "", callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets token series for a token (cursor pagination)
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenSeries(string symbol, ulong carbonTokenId, uint pageSize, string cursor, Action<CursorPaginatedResult<TokenSeriesResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokenSeries", callback, errorHandlingCallback, timeout, retries, symbol, carbonTokenId, pageSize, cursor);
+        }
+
+        /// <summary>
+        /// Gets a single token series by either Phantasma series id or Carbon series id
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="seriesId"></param>
+        /// <param name="carbonSeriesId"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenSeriesById(string symbol, ulong carbonTokenId, string seriesId, uint carbonSeriesId, Action<TokenSeriesResult> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokenSeriesById", callback, errorHandlingCallback, timeout, retries, symbol, carbonTokenId, seriesId, carbonSeriesId);
+        }
+
+        /// <summary>
+        /// Gets NFTs for a token (cursor pagination)
+        /// </summary>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenNFTs(ulong carbonTokenId, Action<CursorPaginatedResult<TokenDataResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return GetTokenNFTs(carbonTokenId, 0, 10, "", false, "", callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets NFTs for a token (cursor pagination)
+        /// </summary>
+        /// <param name="carbonTokenId"></param>
+        /// <param name="carbonSeriesId"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="cursor"></param>
+        /// <param name="extended"></param>
+        /// <param name="seriesId"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenNFTs(ulong carbonTokenId, uint carbonSeriesId, uint pageSize, string cursor, bool extended, string seriesId, Action<CursorPaginatedResult<TokenDataResult[]>> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokenNFTs", callback, errorHandlingCallback, timeout, retries, carbonTokenId, carbonSeriesId, pageSize, cursor, extended, seriesId);
         }
 
         /// <summary>
@@ -440,6 +824,20 @@ namespace PhantasmaPhoenix.Unity.Core
         /// <returns></returns>
         public IEnumerator GetNFTs(string symbol, string[] IDtext, Action<TokenDataResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
         {
+            yield return GetNFTs(symbol, IDtext, false, callback, errorHandlingCallback, timeout, retries);
+        }
+
+        /// <summary>
+        /// Gets NFT data for multiple token ids
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="IDtext"></param>
+        /// <param name="extended"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetNFTs(string symbol, string[] IDtext, bool extended, Action<TokenDataResult[]> callback, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
             while (tokensLoadedSimultaneously > 5)
             {
                 yield return null;
@@ -447,9 +845,12 @@ namespace PhantasmaPhoenix.Unity.Core
 
             tokensLoadedSimultaneously++;
 
-            yield return WebClient.RPCRequest<TokenDataResult[]>(Host, "getNFTs", timeout, retries, errorHandlingCallback, (result) => {
-                callback(result);
-            }, symbol, IDtext);
+            /*
+             * Carbon RPC expects a single comma-delimited token id string here.
+             * Sending the raw array breaks parity with the current C# SDK wrapper and
+             * produces a different JSON payload than the node endpoint validates.
+             */
+            yield return RpcRequest("getNFTs", callback, errorHandlingCallback, timeout, retries, symbol, String.Join(",", IDtext ?? Array.Empty<string>()), extended);
 
             tokensLoadedSimultaneously--;
         }
@@ -468,6 +869,22 @@ namespace PhantasmaPhoenix.Unity.Core
             yield return WebClient.RPCRequest<BalanceResult>(Host, "getTokenBalance", timeout, retries, errorHandlingCallback, (result) => {
                 callback(result);
             }, account, tokenSymbol, chainInput);
+        }
+
+        /// <summary>
+        /// Gets the token balance for a given address, token symbol and address type
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tokenSymbol"></param>
+        /// <param name="chainInput"></param>
+        /// <param name="checkAddressReservedByte"></param>
+        /// <param name="addressType"></param>
+        /// <param name="callback"></param>
+        /// <param name="errorHandlingCallback"></param>
+        /// <returns></returns>
+        public IEnumerator GetTokenBalance(string account, string tokenSymbol, string chainInput, bool checkAddressReservedByte, RpcAddressType addressType, Action<BalanceResult> callback = null, Action<EPHANTASMA_SDK_ERROR_TYPE, string> errorHandlingCallback = null, int timeout = WebClient.DefaultTimeout, int retries = WebClient.DefaultRetries)
+        {
+            yield return RpcRequest("getTokenBalance", callback, errorHandlingCallback, timeout, retries, account, tokenSymbol, chainInput, checkAddressReservedByte, addressType);
         }
         #endregion
         
